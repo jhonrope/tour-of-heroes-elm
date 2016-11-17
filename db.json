@@ -1,16 +1,8 @@
 {
   "heroes": [
     {
-      "id": 13,
-      "name": "Bombasto"
-    },
-    {
-      "id": 14,
-      "name": "Celeritas"
-    },
-    {
       "id": 15,
-      "name": "Piromatics"
+      "name": "Piromatics the Power!"
     },
     {
       "id": 16,
@@ -18,7 +10,7 @@
     },
     {
       "id": 17,
-      "name": "Dynama6"
+      "name": "Dynama"
     },
     {
       "id": 19,
@@ -27,6 +19,10 @@
     {
       "id": 20,
       "name": "Tornado"
+    },
+    {
+      "id": 21,
+      "name": "perro"
     }
   ]
 }

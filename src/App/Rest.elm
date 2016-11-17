@@ -1,10 +1,11 @@
-module Rest exposing (fetchHeroes, getHeroes, fetchHero, saveHero, updateHero, deleteHero)
+module App.Rest exposing (..)
 
-import Types exposing (..)
+import App.Types exposing (..)
 import Task exposing (..)
 import Json.Decode as Json
 import Json.Encode
 import Http exposing (..)
+import Hero.Types exposing (..)
 
 
 heroes : List Hero
@@ -40,11 +41,6 @@ fetchHero url =
 saveHero : Hero -> String -> Cmd Msg
 saveHero hero url =
     Task.perform SaveHeroFail SaveHeroSucceed (post url hero)
-
-
-updateHero : Hero -> String -> Cmd Msg
-updateHero hero url =
-    Task.perform UpdateHeroFail UpdateHeroSucceed (put url hero)
 
 
 deleteHero : String -> Cmd Msg

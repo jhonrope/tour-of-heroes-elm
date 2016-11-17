@@ -4,34 +4,26 @@ import Html.App
 import Debug exposing (log)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Types exposing (..)
-import Rest exposing (..)
-import HeroDetail exposing (..)
+import App.Types exposing (..)
+import App.Rest exposing (..)
 import Routing exposing (..)
 import Navigation exposing (..)
 import String exposing (..)
 import Html exposing (..)
 import Json.Decode as Json
-
-
-type alias AppModel =
-    { title : String
-    , selectedHero : Maybe Hero
-    , heroesList : List Hero
-    , route : Route
-    , newHeroName : Maybe String
-    , searchBox : Maybe String
-    }
+import HeroDetail.State exposing (..)
+import HeroDetail.View exposing (..)
+import Hero.Types exposing (Hero)
 
 
 initApp : Route -> AppModel
 initApp route =
     { title = "Tour of Heroes"
-    , selectedHero = Nothing
     , heroesList = []
     , route = route
-    , newHeroName = Nothing
     , searchBox = Nothing
+    , heroDetailModel = fst HeroDetail.State.init
+    , newHeroName = Nothing
     }
 
 
@@ -50,22 +42,25 @@ init result =
 update : Msg -> AppModel -> ( AppModel, Cmd Msg )
 update msg model =
     case msg of
-        UpdateHeroDetailName newName ->
-            case model.selectedHero of
-                Just previousHero ->
-                    { model | selectedHero = Just { previousHero | name = newName } } ! []
+        HeroDetail heroDetail ->
+            let
+                ( newModel, newCmd ) =
+                    HeroDetail.State.update heroDetail model.heroDetailModel
+            in
+                { model | heroDetailModel = newModel } ! [ Cmd.map HeroDetail newCmd ]
 
-                Nothing ->
-                    model ! []
+        UpdateNewHeroName newName ->
+            { model | newHeroName = Just newName } ! []
 
         SelectHero hero ->
-            { model | selectedHero = Just hero } ! []
+            let
+                heroDetailModel =
+                    model.heroDetailModel
+            in
+                { model | heroDetailModel = { heroDetailModel | selectedHero = Just hero } } ! []
 
         ViewDetails hero ->
-            { model | selectedHero = Nothing, searchBox = Nothing } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
-
-        GoBack ->
-            { model | selectedHero = Nothing } ! [ back 1 ]
+            { model | heroDetailModel = fst HeroDetail.State.init, searchBox = Nothing } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
 
         FetchSucceed list ->
             { model | heroesList = list } ! []
@@ -74,35 +69,23 @@ update msg model =
             { model | heroesList = [] } ! []
 
         FetchHeroSucceed hero ->
-            { model | selectedHero = Just hero } ! []
+            let
+                heroDetailModel =
+                    model.heroDetailModel
+            in
+                { model | heroDetailModel = { heroDetailModel | selectedHero = Just hero } } ! []
 
         FetchHeroFail message ->
-            model ! []
-
-        UpdateHero hero ->
-            { model | selectedHero = Nothing } ! [ updateHero hero <| "http://localhost:3000/heroes/" ++ toString hero.id ]
-
-        UpdateHeroSucceed hero ->
-            model ! [ back 1 ]
-
-        UpdateHeroFail message ->
             model ! []
 
         DeleteHero hero ->
             model ! [ deleteHero <| "http://localhost:3000/heroes/" ++ toString hero.id ]
 
         DeleteHeroSucceed hero ->
-            { model | selectedHero = Nothing } ! [ newUrl "#heroes" ]
+            { model | heroDetailModel = fst HeroDetail.State.init } ! [ newUrl "#heroes" ]
 
         DeleteHeroFail message ->
-            let
-                _ =
-                    log "failed" message
-            in
-                { model | selectedHero = Nothing } ! []
-
-        UpdateNewHeroName newName ->
-            { model | newHeroName = Just newName } ! []
+            { model | heroDetailModel = fst HeroDetail.State.init } ! []
 
         SaveHero ->
             case model.newHeroName of
@@ -116,8 +99,11 @@ update msg model =
             let
                 newList =
                     model.heroesList ++ [ hero ]
+
+                heroDetailModel =
+                    model.heroDetailModel
             in
-                { model | newHeroName = Nothing, heroesList = newList } ! []
+                { model | heroesList = newList, heroDetailModel = fst HeroDetail.State.init } ! []
 
         SaveHeroFail message ->
             model ! []
@@ -178,17 +164,17 @@ urlUpdate result model =
             Routing.routeFromResult result
     in
         case currentRoute of
-            HeroDetail id ->
+            HeroDetails id ->
                 { model | route = currentRoute } ! [ fetchHero ("http://localhost:3000/heroes/" ++ (toString id)) ]
 
             Dashboard ->
-                { model | route = currentRoute } ! [ fetchHeroes "http://localhost:3000/heroes" ]
+                { model | route = currentRoute, searchBox = Nothing } ! [ fetchHeroes "http://localhost:3000/heroes" ]
 
             Heroes ->
-                { model | route = currentRoute } ! [ fetchHeroes "http://localhost:3000/heroes" ]
+                { model | route = currentRoute, searchBox = Nothing } ! [ fetchHeroes "http://localhost:3000/heroes" ]
 
             other ->
-                { model | route = other } ! []
+                { model | route = other, searchBox = Nothing } ! []
 
 
 heroDashboard : Hero -> Html Msg
@@ -264,8 +250,8 @@ page model =
                     ]
                 , ul [ class "heroes" ]
                     -- Fix
-                    (List.map (showHero (Maybe.withDefault (Hero 0 "") model.selectedHero)) model.heroesList)
-                , miniDetail model.selectedHero
+                    (List.map (showHero (Maybe.withDefault (Hero 0 "") model.heroDetailModel.selectedHero)) model.heroesList)
+                , miniDetail model.heroDetailModel.selectedHero
                 ]
 
         Dashboard ->
@@ -275,10 +261,10 @@ page model =
                 , heroSearch model
                 ]
 
-        HeroDetail id ->
-            case model.selectedHero of
+        HeroDetails id ->
+            case model.heroDetailModel.selectedHero of
                 Just h ->
-                    HeroDetail.heroDetail (Just h)
+                    HeroDetail.View.root (Just h) |> Html.App.map HeroDetail
 
                 Nothing ->
                     div [] [ text "Loading..." ]

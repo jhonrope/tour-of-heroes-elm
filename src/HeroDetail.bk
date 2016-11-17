@@ -3,7 +3,7 @@ module HeroDetail exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Types exposing (..)
+import App.Types exposing (..)
 
 
 heroDetail : Maybe Hero -> Html Msg

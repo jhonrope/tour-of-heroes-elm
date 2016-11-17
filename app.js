@@ -8886,295 +8886,27 @@ var _evancz$elm_http$Http$post = F3(
 			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
 	});
 
-var _elm_lang$elm_architecture_tutorial$Types$Hero = F2(
+var _elm_lang$elm_architecture_tutorial$Hero_Types$Hero = F2(
 	function (a, b) {
 		return {id: a, name: b};
 	});
-var _elm_lang$elm_architecture_tutorial$Types$UpdateSearchBox = function (a) {
-	return {ctor: 'UpdateSearchBox', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$SaveHeroFail = function (a) {
-	return {ctor: 'SaveHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$SaveHeroSucceed = function (a) {
-	return {ctor: 'SaveHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$SaveHero = {ctor: 'SaveHero'};
-var _elm_lang$elm_architecture_tutorial$Types$UpdateNewHeroName = function (a) {
-	return {ctor: 'UpdateNewHeroName', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$DeleteHeroFail = function (a) {
-	return {ctor: 'DeleteHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$DeleteHeroSucceed = function (a) {
-	return {ctor: 'DeleteHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$DeleteHero = function (a) {
-	return {ctor: 'DeleteHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$UpdateHeroFail = function (a) {
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$Model = F2(
+	function (a, b) {
+		return {heroName: a, selectedHero: b};
+	});
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail = function (a) {
 	return {ctor: 'UpdateHeroFail', _0: a};
 };
-var _elm_lang$elm_architecture_tutorial$Types$UpdateHeroSucceed = function (a) {
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed = function (a) {
 	return {ctor: 'UpdateHeroSucceed', _0: a};
 };
-var _elm_lang$elm_architecture_tutorial$Types$UpdateHero = function (a) {
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHero = function (a) {
 	return {ctor: 'UpdateHero', _0: a};
 };
-var _elm_lang$elm_architecture_tutorial$Types$FetchHeroFail = function (a) {
-	return {ctor: 'FetchHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$FetchHeroSucceed = function (a) {
-	return {ctor: 'FetchHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$FetchFail = function (a) {
-	return {ctor: 'FetchFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$FetchSucceed = function (a) {
-	return {ctor: 'FetchSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$ViewDetails = function (a) {
-	return {ctor: 'ViewDetails', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$GoBack = {ctor: 'GoBack'};
-var _elm_lang$elm_architecture_tutorial$Types$SelectHero = function (a) {
-	return {ctor: 'SelectHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Types$UpdateHeroDetailName = function (a) {
-	return {ctor: 'UpdateHeroDetailName', _0: a};
-};
-
-var _elm_lang$elm_architecture_tutorial$Rest$delete = function (url) {
-	var config = {
-		verb: 'DELETE',
-		headers: _elm_lang$core$Native_List.fromArray(
-			[
-				{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-			]),
-		url: url,
-		body: _evancz$elm_http$Http$empty
-	};
-	return A2(
-		_evancz$elm_http$Http$fromJson,
-		_elm_lang$core$Json_Decode$succeed(
-			A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 1, '')),
-		A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-};
-var _elm_lang$elm_architecture_tutorial$Rest$encodeHero = function (hero) {
-	return _elm_lang$core$Json_Encode$object(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				{
-				ctor: '_Tuple2',
-				_0: 'id',
-				_1: _elm_lang$core$Json_Encode$int(hero.id)
-			},
-				{
-				ctor: '_Tuple2',
-				_0: 'name',
-				_1: _elm_lang$core$Json_Encode$string(hero.name)
-			}
-			]));
-};
-var _elm_lang$elm_architecture_tutorial$Rest$encodedHeroBody = function (hero) {
-	return _evancz$elm_http$Http$string(
-		A2(
-			_elm_lang$core$Json_Encode$encode,
-			0,
-			_elm_lang$elm_architecture_tutorial$Rest$encodeHero(hero)));
-};
-var _elm_lang$elm_architecture_tutorial$Rest$decodeHero = A3(
-	_elm_lang$core$Json_Decode$object2,
-	_elm_lang$elm_architecture_tutorial$Types$Hero,
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['id']),
-		_elm_lang$core$Json_Decode$int),
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['name']),
-		_elm_lang$core$Json_Decode$string));
-var _elm_lang$elm_architecture_tutorial$Rest$put = F2(
-	function (url, hero) {
-		var body = _elm_lang$elm_architecture_tutorial$Rest$encodedHeroBody(hero);
-		var config = {
-			verb: 'PUT',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-				]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			_elm_lang$elm_architecture_tutorial$Rest$decodeHero,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-	});
-var _elm_lang$elm_architecture_tutorial$Rest$post = F2(
-	function (url, hero) {
-		var body = _elm_lang$elm_architecture_tutorial$Rest$encodedHeroBody(hero);
-		var config = {
-			verb: 'POST',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-				]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			_elm_lang$elm_architecture_tutorial$Rest$decodeHero,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-	});
-var _elm_lang$elm_architecture_tutorial$Rest$decodeListHero = _elm_lang$core$Json_Decode$list(_elm_lang$elm_architecture_tutorial$Rest$decodeHero);
-var _elm_lang$elm_architecture_tutorial$Rest$deleteHero = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$Types$DeleteHeroFail,
-		_elm_lang$elm_architecture_tutorial$Types$DeleteHeroSucceed,
-		_elm_lang$elm_architecture_tutorial$Rest$delete(url));
-};
-var _elm_lang$elm_architecture_tutorial$Rest$updateHero = F2(
-	function (hero, url) {
-		return A3(
-			_elm_lang$core$Task$perform,
-			_elm_lang$elm_architecture_tutorial$Types$UpdateHeroFail,
-			_elm_lang$elm_architecture_tutorial$Types$UpdateHeroSucceed,
-			A2(_elm_lang$elm_architecture_tutorial$Rest$put, url, hero));
-	});
-var _elm_lang$elm_architecture_tutorial$Rest$saveHero = F2(
-	function (hero, url) {
-		return A3(
-			_elm_lang$core$Task$perform,
-			_elm_lang$elm_architecture_tutorial$Types$SaveHeroFail,
-			_elm_lang$elm_architecture_tutorial$Types$SaveHeroSucceed,
-			A2(_elm_lang$elm_architecture_tutorial$Rest$post, url, hero));
-	});
-var _elm_lang$elm_architecture_tutorial$Rest$fetchHero = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$Types$FetchFail,
-		_elm_lang$elm_architecture_tutorial$Types$FetchHeroSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$Rest$decodeHero, url));
-};
-var _elm_lang$elm_architecture_tutorial$Rest$fetchHeroes = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$Types$FetchFail,
-		_elm_lang$elm_architecture_tutorial$Types$FetchSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$Rest$decodeListHero, url));
-};
-var _elm_lang$elm_architecture_tutorial$Rest$heroes = _elm_lang$core$Native_List.fromArray(
-	[
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 1, 'Mr. Nice'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 2, 'Narco'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 3, 'Bombasto'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 4, 'Celeritas'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 5, 'Magneta'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 6, 'RubberMan'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 7, 'Dynama'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 8, 'Dr IQ'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 9, 'Magma'),
-		A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 10, 'Tornado')
-	]);
-var _elm_lang$elm_architecture_tutorial$Rest$getHeroes = _elm_lang$elm_architecture_tutorial$Rest$heroes;
-
-var _elm_lang$elm_architecture_tutorial$HeroDetail$heroDetail = function (maybeHero) {
-	var _p0 = maybeHero;
-	if (_p0.ctor === 'Just') {
-		var _p1 = _p0._0;
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$h2,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$Basics_ops['++'], _p1.name, ' details!'))
-						])),
-					A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							A2(
-							_elm_lang$html$Html$label,
-							_elm_lang$core$Native_List.fromArray(
-								[]),
-							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html$text('id: ')
-								])),
-							_elm_lang$html$Html$text(
-							_elm_lang$core$Basics$toString(_p1.id))
-						])),
-					A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							A2(
-							_elm_lang$html$Html$label,
-							_elm_lang$core$Native_List.fromArray(
-								[]),
-							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html$text('name: ')
-								])),
-							A2(
-							_elm_lang$html$Html$input,
-							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html_Attributes$type$('text'),
-									_elm_lang$html$Html_Attributes$value(_p1.name),
-									_elm_lang$html$Html_Attributes$placeholder('Name'),
-									_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$Types$UpdateHeroDetailName)
-								]),
-							_elm_lang$core$Native_List.fromArray(
-								[]))
-						])),
-					A2(
-					_elm_lang$html$Html$button,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Events$onClick(_elm_lang$elm_architecture_tutorial$Types$GoBack)
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Back')
-						])),
-					A2(
-					_elm_lang$html$Html$button,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Events$onClick(
-							_elm_lang$elm_architecture_tutorial$Types$UpdateHero(_p1))
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Save')
-						]))
-				]));
-	} else {
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[]));
-	}
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$GoBack = {ctor: 'GoBack'};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroName = function (a) {
+	return {ctor: 'UpdateHeroName', _0: a};
 };
 
 var _elm_lang$navigation$Native_Navigation = function() {
@@ -9711,8 +9443,8 @@ var _elm_lang$elm_architecture_tutorial$Routing$routeFromResult = function (resu
 		return _elm_lang$elm_architecture_tutorial$Routing$NotFoundRoute;
 	}
 };
-var _elm_lang$elm_architecture_tutorial$Routing$HeroDetail = function (a) {
-	return {ctor: 'HeroDetail', _0: a};
+var _elm_lang$elm_architecture_tutorial$Routing$HeroDetails = function (a) {
+	return {ctor: 'HeroDetails', _0: a};
 };
 var _elm_lang$elm_architecture_tutorial$Routing$Heroes = {ctor: 'Heroes'};
 var _elm_lang$elm_architecture_tutorial$Routing$Dashboard = {ctor: 'Dashboard'};
@@ -9725,7 +9457,7 @@ var _elm_lang$elm_architecture_tutorial$Routing$matchers = _evancz$url_parser$Ur
 			_evancz$url_parser$UrlParser$s('')),
 			A2(
 			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$Routing$HeroDetail,
+			_elm_lang$elm_architecture_tutorial$Routing$HeroDetails,
 			A2(
 				_evancz$url_parser$UrlParser_ops['</>'],
 				_evancz$url_parser$UrlParser$s('heroes'),
@@ -9747,6 +9479,369 @@ var _elm_lang$elm_architecture_tutorial$Routing$hashParser = function (location)
 		A2(_elm_lang$core$String$dropLeft, 1, location.hash));
 };
 var _elm_lang$elm_architecture_tutorial$Routing$parser = _elm_lang$navigation$Navigation$makeParser(_elm_lang$elm_architecture_tutorial$Routing$hashParser);
+
+var _elm_lang$elm_architecture_tutorial$App_Types$AppModel = F6(
+	function (a, b, c, d, e, f) {
+		return {title: a, heroesList: b, route: c, searchBox: d, heroDetailModel: e, newHeroName: f};
+	});
+var _elm_lang$elm_architecture_tutorial$App_Types$UpdateSearchBox = function (a) {
+	return {ctor: 'UpdateSearchBox', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SaveHeroFail = function (a) {
+	return {ctor: 'SaveHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SaveHeroSucceed = function (a) {
+	return {ctor: 'SaveHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SaveHero = {ctor: 'SaveHero'};
+var _elm_lang$elm_architecture_tutorial$App_Types$UpdateNewHeroName = function (a) {
+	return {ctor: 'UpdateNewHeroName', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroFail = function (a) {
+	return {ctor: 'DeleteHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroSucceed = function (a) {
+	return {ctor: 'DeleteHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHero = function (a) {
+	return {ctor: 'DeleteHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroFail = function (a) {
+	return {ctor: 'FetchHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed = function (a) {
+	return {ctor: 'FetchHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchFail = function (a) {
+	return {ctor: 'FetchFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed = function (a) {
+	return {ctor: 'FetchSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$ViewDetails = function (a) {
+	return {ctor: 'ViewDetails', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SelectHero = function (a) {
+	return {ctor: 'SelectHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetail = function (a) {
+	return {ctor: 'HeroDetail', _0: a};
+};
+
+var _elm_lang$elm_architecture_tutorial$App_Rest$delete = function (url) {
+	var config = {
+		verb: 'DELETE',
+		headers: _elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+			]),
+		url: url,
+		body: _evancz$elm_http$Http$empty
+	};
+	return A2(
+		_evancz$elm_http$Http$fromJson,
+		_elm_lang$core$Json_Decode$succeed(
+			A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, '')),
+		A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$encodeHero = function (hero) {
+	return _elm_lang$core$Json_Encode$object(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{
+				ctor: '_Tuple2',
+				_0: 'id',
+				_1: _elm_lang$core$Json_Encode$int(hero.id)
+			},
+				{
+				ctor: '_Tuple2',
+				_0: 'name',
+				_1: _elm_lang$core$Json_Encode$string(hero.name)
+			}
+			]));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody = function (hero) {
+	return _evancz$elm_http$Http$string(
+		A2(
+			_elm_lang$core$Json_Encode$encode,
+			0,
+			_elm_lang$elm_architecture_tutorial$App_Rest$encodeHero(hero)));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero = A3(
+	_elm_lang$core$Json_Decode$object2,
+	_elm_lang$elm_architecture_tutorial$Hero_Types$Hero,
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['id']),
+		_elm_lang$core$Json_Decode$int),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['name']),
+		_elm_lang$core$Json_Decode$string));
+var _elm_lang$elm_architecture_tutorial$App_Rest$put = F2(
+	function (url, hero) {
+		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
+		var config = {
+			verb: 'PUT',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+				]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$post = F2(
+	function (url, hero) {
+		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
+		var config = {
+			verb: 'POST',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+				]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero = _elm_lang$core$Json_Decode$list(_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero);
+var _elm_lang$elm_architecture_tutorial$App_Rest$deleteHero = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroSucceed,
+		_elm_lang$elm_architecture_tutorial$App_Rest$delete(url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$saveHero = F2(
+	function (hero, url) {
+		return A3(
+			_elm_lang$core$Task$perform,
+			_elm_lang$elm_architecture_tutorial$App_Types$SaveHeroFail,
+			_elm_lang$elm_architecture_tutorial$App_Types$SaveHeroSucceed,
+			A2(_elm_lang$elm_architecture_tutorial$App_Rest$post, url, hero));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHero = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed,
+		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero, url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed,
+		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero, url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$heroes = _elm_lang$core$Native_List.fromArray(
+	[
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, 'Mr. Nice'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 2, 'Narco'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 3, 'Bombasto'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 4, 'Celeritas'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 5, 'Magneta'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 6, 'RubberMan'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 7, 'Dynama'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 8, 'Dr IQ'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 9, 'Magma'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 10, 'Tornado')
+	]);
+var _elm_lang$elm_architecture_tutorial$App_Rest$getHeroes = _elm_lang$elm_architecture_tutorial$App_Rest$heroes;
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero = F2(
+	function (hero, url) {
+		return A3(
+			_elm_lang$core$Task$perform,
+			_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail,
+			_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed,
+			A2(_elm_lang$elm_architecture_tutorial$App_Rest$put, url, hero));
+	});
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_State$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$none;
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'UpdateHeroName':
+				var _p1 = model.selectedHero;
+				if (_p1.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								selectedHero: _elm_lang$core$Maybe$Just(
+									_elm_lang$core$Native_Utils.update(
+										_p1._0,
+										{name: _p0._0}))
+							}),
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				}
+			case 'GoBack':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{selectedHero: _elm_lang$core$Maybe$Nothing}),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$navigation$Navigation$back(1)
+						]));
+			case 'UpdateHero':
+				var _p2 = _p0._0;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{selectedHero: _elm_lang$core$Maybe$Nothing}),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(
+							_elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero,
+							_p2,
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								'http://localhost:3000/heroes/',
+								_elm_lang$core$Basics$toString(_p2.id)))
+						]));
+			case 'UpdateHeroSucceed':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$navigation$Navigation$back(1)
+						]));
+			default:
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+		}
+	});
+var _elm_lang$elm_architecture_tutorial$HeroDetail_State$init = function () {
+	var model = {heroName: _elm_lang$core$Maybe$Nothing, selectedHero: _elm_lang$core$Maybe$Nothing};
+	return A2(
+		_elm_lang$core$Platform_Cmd_ops['!'],
+		model,
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+}();
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_View$root = function (maybeHero) {
+	var _p0 = maybeHero;
+	if (_p0.ctor === 'Just') {
+		var _p1 = _p0._0;
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$h2,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							A2(_elm_lang$core$Basics_ops['++'], _p1.name, ' details!'))
+						])),
+					A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(
+							_elm_lang$html$Html$label,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html$text('id: ')
+								])),
+							_elm_lang$html$Html$text(
+							_elm_lang$core$Basics$toString(_p1.id))
+						])),
+					A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(
+							_elm_lang$html$Html$label,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html$text('name: ')
+								])),
+							A2(
+							_elm_lang$html$Html$input,
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html_Attributes$type$('text'),
+									_elm_lang$html$Html_Attributes$value(_p1.name),
+									_elm_lang$html$Html_Attributes$placeholder('Name'),
+									_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroName)
+								]),
+							_elm_lang$core$Native_List.fromArray(
+								[]))
+						])),
+					A2(
+					_elm_lang$html$Html$button,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Events$onClick(_elm_lang$elm_architecture_tutorial$HeroDetail_Types$GoBack)
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('Back')
+						])),
+					A2(
+					_elm_lang$html$Html$button,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Events$onClick(
+							_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHero(_p1))
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('Save')
+						]))
+				]));
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	}
+};
 
 var _elm_lang$elm_architecture_tutorial$App$noBubble = {stopPropagation: true, preventDefault: true};
 var _elm_lang$elm_architecture_tutorial$App$otherClick = function (message) {
@@ -9775,7 +9870,7 @@ var _elm_lang$elm_architecture_tutorial$App$heroSearchItem = function (hero) {
 			[
 				_elm_lang$html$Html_Attributes$class('search-result'),
 				_elm_lang$html$Html_Events$onClick(
-				_elm_lang$elm_architecture_tutorial$Types$ViewDetails(hero))
+				_elm_lang$elm_architecture_tutorial$App_Types$ViewDetails(hero))
 			]),
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -9821,7 +9916,7 @@ var _elm_lang$elm_architecture_tutorial$App$heroSearch = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$id('search-box'),
-						_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$Types$UpdateSearchBox)
+						_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$App_Types$UpdateSearchBox)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[])),
@@ -9859,7 +9954,7 @@ var _elm_lang$elm_architecture_tutorial$App$miniDetail = function (maybeHero) {
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html_Events$onClick(
-							_elm_lang$elm_architecture_tutorial$Types$ViewDetails(_p2))
+							_elm_lang$elm_architecture_tutorial$App_Types$ViewDetails(_p2))
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -9882,7 +9977,7 @@ var _elm_lang$elm_architecture_tutorial$App$heroDashboard = function (hero) {
 			[
 				_elm_lang$html$Html_Attributes$class('col-1-4'),
 				_elm_lang$html$Html_Events$onClick(
-				_elm_lang$elm_architecture_tutorial$Types$ViewDetails(hero))
+				_elm_lang$elm_architecture_tutorial$App_Types$ViewDetails(hero))
 			]),
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -9919,7 +10014,7 @@ var _elm_lang$elm_architecture_tutorial$App$urlUpdate = F2(
 		var currentRoute = _elm_lang$elm_architecture_tutorial$Routing$routeFromResult(result);
 		var _p3 = currentRoute;
 		switch (_p3.ctor) {
-			case 'HeroDetail':
+			case 'HeroDetails':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -9927,7 +10022,7 @@ var _elm_lang$elm_architecture_tutorial$App$urlUpdate = F2(
 						{route: currentRoute}),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$elm_architecture_tutorial$Rest$fetchHero(
+							_elm_lang$elm_architecture_tutorial$App_Rest$fetchHero(
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								'http://localhost:3000/heroes/',
@@ -9938,27 +10033,27 @@ var _elm_lang$elm_architecture_tutorial$App$urlUpdate = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{route: currentRoute}),
+						{route: currentRoute, searchBox: _elm_lang$core$Maybe$Nothing}),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$elm_architecture_tutorial$Rest$fetchHeroes('http://localhost:3000/heroes')
+							_elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes('http://localhost:3000/heroes')
 						]));
 			case 'Heroes':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{route: currentRoute}),
+						{route: currentRoute, searchBox: _elm_lang$core$Maybe$Nothing}),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$elm_architecture_tutorial$Rest$fetchHeroes('http://localhost:3000/heroes')
+							_elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes('http://localhost:3000/heroes')
 						]));
 			default:
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{route: _p3}),
+						{route: _p3, searchBox: _elm_lang$core$Maybe$Nothing}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 		}
@@ -9980,7 +10075,7 @@ var _elm_lang$elm_architecture_tutorial$App$showHero = F2(
 			_elm_lang$core$Native_List.fromArray(
 				[
 					_elm_lang$html$Html_Events$onClick(
-					_elm_lang$elm_architecture_tutorial$Types$SelectHero(hero)),
+					_elm_lang$elm_architecture_tutorial$App_Types$SelectHero(hero)),
 					_elm_lang$elm_architecture_tutorial$App$addSelectedClass(
 					_elm_lang$core$Native_Utils.eq(hero, hero2))
 				]),
@@ -10012,7 +10107,7 @@ var _elm_lang$elm_architecture_tutorial$App$showHero = F2(
 						[
 							_elm_lang$html$Html_Attributes$class('delete'),
 							_elm_lang$elm_architecture_tutorial$App$otherClick(
-							_elm_lang$elm_architecture_tutorial$Types$DeleteHero(hero))
+							_elm_lang$elm_architecture_tutorial$App_Types$DeleteHero(hero))
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -10057,7 +10152,7 @@ var _elm_lang$elm_architecture_tutorial$App$page = function (model) {
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html_Attributes$type$('text'),
-										_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$Types$UpdateNewHeroName),
+										_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$App_Types$UpdateNewHeroName),
 										_elm_lang$html$Html_Attributes$value(
 										A2(_elm_lang$core$Maybe$withDefault, '', model.newHeroName))
 									]),
@@ -10067,7 +10162,7 @@ var _elm_lang$elm_architecture_tutorial$App$page = function (model) {
 								_elm_lang$html$Html$button,
 								_elm_lang$core$Native_List.fromArray(
 									[
-										_elm_lang$html$Html_Events$onClick(_elm_lang$elm_architecture_tutorial$Types$SaveHero)
+										_elm_lang$html$Html_Events$onClick(_elm_lang$elm_architecture_tutorial$App_Types$SaveHero)
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[
@@ -10085,10 +10180,10 @@ var _elm_lang$elm_architecture_tutorial$App$page = function (model) {
 							_elm_lang$elm_architecture_tutorial$App$showHero(
 								A2(
 									_elm_lang$core$Maybe$withDefault,
-									A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 0, ''),
-									model.selectedHero)),
+									A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, ''),
+									model.heroDetailModel.selectedHero)),
 							model.heroesList)),
-						_elm_lang$elm_architecture_tutorial$App$miniDetail(model.selectedHero)
+						_elm_lang$elm_architecture_tutorial$App$miniDetail(model.heroDetailModel.selectedHero)
 					]));
 		case 'Dashboard':
 			return A2(
@@ -10112,11 +10207,14 @@ var _elm_lang$elm_architecture_tutorial$App$page = function (model) {
 						_elm_lang$elm_architecture_tutorial$App$dashboardView(model.heroesList)),
 						_elm_lang$elm_architecture_tutorial$App$heroSearch(model)
 					]));
-		case 'HeroDetail':
-			var _p5 = model.selectedHero;
+		case 'HeroDetails':
+			var _p5 = model.heroDetailModel.selectedHero;
 			if (_p5.ctor === 'Just') {
-				return _elm_lang$elm_architecture_tutorial$HeroDetail$heroDetail(
-					_elm_lang$core$Maybe$Just(_p5._0));
+				return A2(
+					_elm_lang$html$Html_App$map,
+					_elm_lang$elm_architecture_tutorial$App_Types$HeroDetail,
+					_elm_lang$elm_architecture_tutorial$HeroDetail_View$root(
+						_elm_lang$core$Maybe$Just(_p5._0)));
 			} else {
 				return A2(
 					_elm_lang$html$Html$div,
@@ -10187,35 +10285,41 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 	function (msg, model) {
 		var _p6 = msg;
 		switch (_p6.ctor) {
-			case 'UpdateHeroDetailName':
-				var _p7 = model.selectedHero;
-				if (_p7.ctor === 'Just') {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{
-								selectedHero: _elm_lang$core$Maybe$Just(
-									_elm_lang$core$Native_Utils.update(
-										_p7._0,
-										{name: _p6._0}))
-							}),
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
+			case 'HeroDetail':
+				var _p7 = A2(_elm_lang$elm_architecture_tutorial$HeroDetail_State$update, _p6._0, model.heroDetailModel);
+				var newModel = _p7._0;
+				var newCmd = _p7._1;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
 						model,
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				}
-			case 'SelectHero':
+						{heroDetailModel: newModel}),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(_elm_lang$core$Platform_Cmd$map, _elm_lang$elm_architecture_tutorial$App_Types$HeroDetail, newCmd)
+						]));
+			case 'UpdateNewHeroName':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							selectedHero: _elm_lang$core$Maybe$Just(_p6._0)
+							newHeroName: _elm_lang$core$Maybe$Just(_p6._0)
+						}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'SelectHero':
+				var heroDetailModel = model.heroDetailModel;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroDetailModel: _elm_lang$core$Native_Utils.update(
+								heroDetailModel,
+								{
+									selectedHero: _elm_lang$core$Maybe$Just(_p6._0)
+								})
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
@@ -10224,7 +10328,10 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing, searchBox: _elm_lang$core$Maybe$Nothing}),
+						{
+							heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init),
+							searchBox: _elm_lang$core$Maybe$Nothing
+						}),
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$navigation$Navigation$newUrl(
@@ -10232,16 +10339,6 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 								_elm_lang$core$Basics_ops['++'],
 								'#heroes/',
 								_elm_lang$core$Basics$toString(_p6._0.id)))
-						]));
-			case 'GoBack':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$navigation$Navigation$back(1)
 						]));
 			case 'FetchSucceed':
 				return A2(
@@ -10263,47 +10360,21 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'FetchHeroSucceed':
+				var heroDetailModel = model.heroDetailModel;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							selectedHero: _elm_lang$core$Maybe$Just(_p6._0)
+							heroDetailModel: _elm_lang$core$Native_Utils.update(
+								heroDetailModel,
+								{
+									selectedHero: _elm_lang$core$Maybe$Just(_p6._0)
+								})
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'FetchHeroFail':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'UpdateHero':
-				var _p8 = _p6._0;
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							A2(
-							_elm_lang$elm_architecture_tutorial$Rest$updateHero,
-							_p8,
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								'http://localhost:3000/heroes/',
-								_elm_lang$core$Basics$toString(_p8.id)))
-						]));
-			case 'UpdateHeroSucceed':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$navigation$Navigation$back(1)
-						]));
-			case 'UpdateHeroFail':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					model,
@@ -10315,7 +10386,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					model,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$elm_architecture_tutorial$Rest$deleteHero(
+							_elm_lang$elm_architecture_tutorial$App_Rest$deleteHero(
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								'http://localhost:3000/heroes/',
@@ -10326,33 +10397,26 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
+						{
+							heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init)
+						}),
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$navigation$Navigation$newUrl('#heroes')
 						]));
 			case 'DeleteHeroFail':
-				var _p9 = A2(_elm_lang$core$Debug$log, 'failed', _p6._0);
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'UpdateNewHeroName':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							newHeroName: _elm_lang$core$Maybe$Just(_p6._0)
+							heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init)
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'SaveHero':
-				var _p10 = model.newHeroName;
-				if (_p10.ctor === 'Just') {
+				var _p8 = model.newHeroName;
+				if (_p8.ctor === 'Just') {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
@@ -10361,8 +10425,8 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 						_elm_lang$core$Native_List.fromArray(
 							[
 								A2(
-								_elm_lang$elm_architecture_tutorial$Rest$saveHero,
-								A2(_elm_lang$elm_architecture_tutorial$Types$Hero, 0, _p10._0),
+								_elm_lang$elm_architecture_tutorial$App_Rest$saveHero,
+								A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, _p8._0),
 								'http://localhost:3000/heroes')
 							]));
 				} else {
@@ -10373,6 +10437,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 							[]));
 				}
 			case 'SaveHeroSucceed':
+				var heroDetailModel = model.heroDetailModel;
 				var newList = A2(
 					_elm_lang$core$Basics_ops['++'],
 					model.heroesList,
@@ -10382,7 +10447,10 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{newHeroName: _elm_lang$core$Maybe$Nothing, heroesList: newList}),
+						{
+							heroesList: newList,
+							heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init)
+						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'SaveHeroFail':
@@ -10392,8 +10460,8 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			default:
-				var _p11 = _p6._0;
-				return _elm_lang$core$Native_Utils.eq(_p11, '') ? A2(
+				var _p9 = _p6._0;
+				return _elm_lang$core$Native_Utils.eq(_p9, '') ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
@@ -10404,7 +10472,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							searchBox: _elm_lang$core$Maybe$Just(_p11)
+							searchBox: _elm_lang$core$Maybe$Just(_p9)
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
@@ -10413,12 +10481,12 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 var _elm_lang$elm_architecture_tutorial$App$initApp = function (route) {
 	return {
 		title: 'Tour of Heroes',
-		selectedHero: _elm_lang$core$Maybe$Nothing,
 		heroesList: _elm_lang$core$Native_List.fromArray(
 			[]),
 		route: route,
-		newHeroName: _elm_lang$core$Maybe$Nothing,
-		searchBox: _elm_lang$core$Maybe$Nothing
+		searchBox: _elm_lang$core$Maybe$Nothing,
+		heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init),
+		newHeroName: _elm_lang$core$Maybe$Nothing
 	};
 };
 var _elm_lang$elm_architecture_tutorial$App$init = function (result) {
@@ -10436,10 +10504,6 @@ var _elm_lang$elm_architecture_tutorial$App$main = {
 		_elm_lang$elm_architecture_tutorial$Routing$parser,
 		{init: _elm_lang$elm_architecture_tutorial$App$init, view: _elm_lang$elm_architecture_tutorial$App$view, update: _elm_lang$elm_architecture_tutorial$App$update, subscriptions: _elm_lang$elm_architecture_tutorial$App$subscriptions, urlUpdate: _elm_lang$elm_architecture_tutorial$App$urlUpdate})
 };
-var _elm_lang$elm_architecture_tutorial$App$AppModel = F6(
-	function (a, b, c, d, e, f) {
-		return {title: a, selectedHero: b, heroesList: c, route: d, newHeroName: e, searchBox: f};
-	});
 
 var Elm = {};
 Elm['App'] = Elm['App'] || {};

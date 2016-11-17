@@ -1,26 +1,30 @@
 module Types exposing (..)
 
 import Http exposing (..)
+import HeroDetail.Types exposing (..)
+import Hero.Types exposing (..)
+import Routing exposing (..)
 
 
-type alias Hero =
-    { id : Int
-    , name : String
+type alias AppModel =
+    { title : String
+    , selectedHero : Maybe Hero
+    , heroesList : List Hero
+    , route : Route
+    , newHeroName : Maybe String
+    , searchBox : Maybe String
+    , heroDetailModel : HeroDetail.Types.Model
     }
 
 
 type Msg
-    = UpdateHeroDetailName String
+    = HeroDetail HeroDetail.Types.Msg
     | SelectHero Hero
-    | GoBack
     | ViewDetails Hero
     | FetchSucceed (List Hero)
     | FetchFail Http.Error
     | FetchHeroSucceed Hero
     | FetchHeroFail Http.Error
-    | UpdateHero Hero
-    | UpdateHeroSucceed Hero
-    | UpdateHeroFail Http.Error
     | DeleteHero Hero
     | DeleteHeroSucceed Hero
     | DeleteHeroFail Http.Error
