@@ -3,7 +3,6 @@ module App.Types exposing (..)
 import Http exposing (..)
 import HeroDetail.Types exposing (..)
 import Hero.Types exposing (..)
-import Routing exposing (..)
 
 
 type alias AppModel =
@@ -32,3 +31,10 @@ type Msg
     | SaveHeroSucceed Hero
     | SaveHeroFail Http.Error
     | UpdateSearchBox String
+
+
+type Route
+    = Dashboard
+    | Heroes
+    | HeroDetails Int
+    | NotFoundRoute

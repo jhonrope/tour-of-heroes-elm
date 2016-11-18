@@ -4,13 +4,7 @@ import String
 import Navigation
 import UrlParser exposing (..)
 import Debug exposing (log)
-
-
-type Route
-    = Dashboard
-    | Heroes
-    | HeroDetails Int
-    | NotFoundRoute
+import App.Types exposing (..)
 
 
 matchers : Parser (Route -> a) a
