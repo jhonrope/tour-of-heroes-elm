@@ -29,3 +29,9 @@ update msg model =
                     HeroSearch.State.update heroSearch model.heroSearchModel
             in
                 { model | heroSearchModel = newModel } ! [ Cmd.map HeroSearch newCmd ]
+
+        FetchSucceed list ->
+            { model | heroesList = list } ! []
+
+        FetchFail message ->
+            { model | heroesList = [] } ! []

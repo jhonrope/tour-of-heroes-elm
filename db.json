@@ -1,16 +1,12 @@
 {
   "heroes": [
     {
-      "id": 15,
-      "name": "Piromatics"
-    },
-    {
       "id": 16,
       "name": "RubberMan12"
     },
     {
       "id": 19,
-      "name": "Magma"
+      "name": "Magma1"
     },
     {
       "id": 20,
@@ -22,11 +18,19 @@
     },
     {
       "id": 22,
-      "name": "superman"
+      "name": "superman adios"
     },
     {
       "id": 23,
       "name": "elite warrior"
+    },
+    {
+      "id": 24,
+      "name": "asdfwerq"
+    },
+    {
+      "id": 25,
+      "name": "nuevo heroe"
     }
   ]
 }

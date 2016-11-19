@@ -29,10 +29,9 @@ update msg model =
         SelectHero hero ->
             { model | selectedHero = Just hero } ! []
 
-        {-
-           ViewDetails hero ->
-               { model | heroDetailModel = fst HeroDetail.State.init } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
-        -}
+        ViewDetails hero ->
+            { model | selectedHero = Nothing } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
+
         SaveHero ->
             case model.newHeroName of
                 Just newName ->
@@ -59,3 +58,9 @@ update msg model =
 
         DeleteHeroFail message ->
             { model | newHeroName = Nothing } ! []
+
+        FetchSucceed list ->
+            { model | heroesList = list } ! []
+
+        FetchFail message ->
+            { model | heroesList = [] } ! []

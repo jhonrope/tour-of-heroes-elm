@@ -28,17 +28,9 @@ getHeroes =
     heroes
 
 
-fetchHeroes : String -> Cmd Msg
-fetchHeroes url =
-    Task.perform FetchFail FetchSucceed (Http.get decodeListHero url)
-
-
 fetchHero : String -> Cmd Msg
 fetchHero url =
-    Task.perform FetchFail FetchHeroSucceed (Http.get decodeHero url)
-
-
-
+    Task.perform FetchHeroFail FetchHeroSucceed (Http.get decodeHero url)
 
 
 decodeListHero : Json.Decoder (List Hero)

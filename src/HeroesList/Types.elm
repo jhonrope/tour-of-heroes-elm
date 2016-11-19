@@ -22,3 +22,5 @@ type Msg
     | DeleteHero Hero
     | DeleteHeroSucceed Hero
     | DeleteHeroFail Http.Error
+    | FetchSucceed (List Hero)
+    | FetchFail Http.Error

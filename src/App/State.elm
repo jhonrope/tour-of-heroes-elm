@@ -7,6 +7,8 @@ import App.Rest exposing (..)
 import Routing exposing (..)
 import HeroesList.State exposing (..)
 import Dashboard.State exposing (..)
+import Dashboard.Rest as DRest exposing (..)
+import HeroesList.Rest as HLRest exposing (..)
 
 
 update : Msg -> AppModel -> ( AppModel, Cmd Msg )
@@ -33,12 +35,6 @@ update msg model =
             in
                 { model | dashboardModel = newModel } ! [ Cmd.map DashboardT newCmd ]
 
-        FetchSucceed list ->
-            { model | heroesList = list } ! []
-
-        FetchFail message ->
-            { model | heroesList = [] } ! []
-
         FetchHeroSucceed hero ->
             let
                 heroDetailModel =
@@ -61,10 +57,10 @@ urlUpdate result model =
                 { model | route = currentRoute } ! [ fetchHero ("http://localhost:3000/heroes/" ++ (toString id)) ]
 
             Dashboard ->
-                { model | route = currentRoute } ! [ fetchHeroes "http://localhost:3000/heroes" ]
+                { model | route = currentRoute } ! [ Cmd.map DashboardT (DRest.fetchHeroes "http://localhost:3000/heroes") ]
 
             Heroes ->
-                { model | route = currentRoute } ! [ fetchHeroes "http://localhost:3000/heroes" ]
+                { model | route = currentRoute } ! [ Cmd.map HeroesList (HLRest.fetchHeroes "http://localhost:3000/heroes") ]
 
             other ->
                 { model | route = other } ! []

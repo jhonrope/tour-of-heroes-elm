@@ -1,5 +1,6 @@
 module HeroesList.Rest exposing (..)
 
+import Http exposing (get)
 import HeroesList.Types exposing (..)
 import Hero.Types exposing (..)
 import Task exposing (..)
@@ -14,3 +15,8 @@ saveHero hero url =
 deleteHero : String -> Cmd Msg
 deleteHero url =
     Task.perform DeleteHeroFail DeleteHeroSucceed (delete url)
+
+
+fetchHeroes : String -> Cmd Msg
+fetchHeroes url =
+    Task.perform FetchFail FetchSucceed (Http.get decodeListHero url)

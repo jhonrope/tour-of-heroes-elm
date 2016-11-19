@@ -21,8 +21,6 @@ type Msg
     = HeroDetail HeroDetail.Types.Msg
     | HeroesList HeroesList.Types.Msg
     | DashboardT Dashboard.Types.Msg
-    | FetchSucceed (List Hero)
-    | FetchFail Http.Error
     | FetchHeroSucceed Hero
     | FetchHeroFail Http.Error
 
