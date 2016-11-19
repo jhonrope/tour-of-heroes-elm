@@ -52,11 +52,3 @@ addActiveClass route c =
         class "active"
     else
         class ""
-
-
-addSelectedClass : Bool -> Html.Attribute Msg
-addSelectedClass bool =
-    if bool then
-        class "selected"
-    else
-        class ""

@@ -40,7 +40,7 @@ miniDetail maybeHero =
 
 showHero : Hero -> Hero -> Html Msg
 showHero hero2 hero =
-    div [ onClick <| SelectHero hero ]
+    li [ onClick <| SelectHero hero, addSelectedClass <| hero2 == hero ]
         [ span [ class "badge" ] [ text (toString hero.id) ]
         , span [] [ text (" " ++ hero.name) ]
         , button [ class "delete", otherClick <| DeleteHero hero ] [ text "x" ]
@@ -57,3 +57,11 @@ noBubble =
 otherClick : Msg -> Attribute Msg
 otherClick message =
     onWithOptions "click" noBubble (Json.succeed message)
+
+
+addSelectedClass : Bool -> Html.Attribute Msg
+addSelectedClass bool =
+    if bool then
+        class "selected"
+    else
+        class ""

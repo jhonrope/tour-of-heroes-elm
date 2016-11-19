@@ -6448,6 +6448,572 @@ return {
 var _elm_lang$dom$Dom_LowLevel$onWindow = _elm_lang$dom$Native_Dom.onWindow;
 var _elm_lang$dom$Dom_LowLevel$onDocument = _elm_lang$dom$Native_Dom.onDocument;
 
+//import Dict, List, Maybe, Native.Scheduler //
+
+var _evancz$elm_http$Native_Http = function() {
+
+function send(settings, request)
+{
+	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+		var req = new XMLHttpRequest();
+
+		// start
+		if (settings.onStart.ctor === 'Just')
+		{
+			req.addEventListener('loadStart', function() {
+				var task = settings.onStart._0;
+				_elm_lang$core$Native_Scheduler.rawSpawn(task);
+			});
+		}
+
+		// progress
+		if (settings.onProgress.ctor === 'Just')
+		{
+			req.addEventListener('progress', function(event) {
+				var progress = !event.lengthComputable
+					? _elm_lang$core$Maybe$Nothing
+					: _elm_lang$core$Maybe$Just({
+						loaded: event.loaded,
+						total: event.total
+					});
+				var task = settings.onProgress._0(progress);
+				_elm_lang$core$Native_Scheduler.rawSpawn(task);
+			});
+		}
+
+		// end
+		req.addEventListener('error', function() {
+			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawNetworkError' }));
+		});
+
+		req.addEventListener('timeout', function() {
+			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawTimeout' }));
+		});
+
+		req.addEventListener('load', function() {
+			return callback(_elm_lang$core$Native_Scheduler.succeed(toResponse(req)));
+		});
+
+		req.open(request.verb, request.url, true);
+
+		// set all the headers
+		function setHeader(pair) {
+			req.setRequestHeader(pair._0, pair._1);
+		}
+		A2(_elm_lang$core$List$map, setHeader, request.headers);
+
+		// set the timeout
+		req.timeout = settings.timeout;
+
+		// enable this withCredentials thing
+		req.withCredentials = settings.withCredentials;
+
+		// ask for a specific MIME type for the response
+		if (settings.desiredResponseType.ctor === 'Just')
+		{
+			req.overrideMimeType(settings.desiredResponseType._0);
+		}
+
+		// actuall send the request
+		if(request.body.ctor === "BodyFormData")
+		{
+			req.send(request.body.formData)
+		}
+		else
+		{
+			req.send(request.body._0);
+		}
+
+		return function() {
+			req.abort();
+		};
+	});
+}
+
+
+// deal with responses
+
+function toResponse(req)
+{
+	var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
+	var response = tag === 'Blob' ? req.response : req.responseText;
+	return {
+		status: req.status,
+		statusText: req.statusText,
+		headers: parseHeaders(req.getAllResponseHeaders()),
+		url: req.responseURL,
+		value: { ctor: tag, _0: response }
+	};
+}
+
+
+function parseHeaders(rawHeaders)
+{
+	var headers = _elm_lang$core$Dict$empty;
+
+	if (!rawHeaders)
+	{
+		return headers;
+	}
+
+	var headerPairs = rawHeaders.split('\u000d\u000a');
+	for (var i = headerPairs.length; i--; )
+	{
+		var headerPair = headerPairs[i];
+		var index = headerPair.indexOf('\u003a\u0020');
+		if (index > 0)
+		{
+			var key = headerPair.substring(0, index);
+			var value = headerPair.substring(index + 2);
+
+			headers = A3(_elm_lang$core$Dict$update, key, function(oldValue) {
+				if (oldValue.ctor === 'Just')
+				{
+					return _elm_lang$core$Maybe$Just(value + ', ' + oldValue._0);
+				}
+				return _elm_lang$core$Maybe$Just(value);
+			}, headers);
+		}
+	}
+
+	return headers;
+}
+
+
+function multipart(dataList)
+{
+	var formData = new FormData();
+
+	while (dataList.ctor !== '[]')
+	{
+		var data = dataList._0;
+		if (data.ctor === 'StringData')
+		{
+			formData.append(data._0, data._1);
+		}
+		else
+		{
+			var fileName = data._1.ctor === 'Nothing'
+				? undefined
+				: data._1._0;
+			formData.append(data._0, data._2, fileName);
+		}
+		dataList = dataList._1;
+	}
+
+	return { ctor: 'BodyFormData', formData: formData };
+}
+
+
+function uriEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function uriDecode(string)
+{
+	return decodeURIComponent(string);
+}
+
+return {
+	send: F2(send),
+	multipart: multipart,
+	uriEncode: uriEncode,
+	uriDecode: uriDecode
+};
+
+}();
+
+var _evancz$elm_http$Http$send = _evancz$elm_http$Native_Http.send;
+var _evancz$elm_http$Http$defaultSettings = {timeout: 0, onStart: _elm_lang$core$Maybe$Nothing, onProgress: _elm_lang$core$Maybe$Nothing, desiredResponseType: _elm_lang$core$Maybe$Nothing, withCredentials: false};
+var _evancz$elm_http$Http$multipart = _evancz$elm_http$Native_Http.multipart;
+var _evancz$elm_http$Http$uriDecode = _evancz$elm_http$Native_Http.uriDecode;
+var _evancz$elm_http$Http$uriEncode = _evancz$elm_http$Native_Http.uriEncode;
+var _evancz$elm_http$Http$queryEscape = function (string) {
+	return A2(
+		_elm_lang$core$String$join,
+		'+',
+		A2(
+			_elm_lang$core$String$split,
+			'%20',
+			_evancz$elm_http$Http$uriEncode(string)));
+};
+var _evancz$elm_http$Http$queryPair = function (_p0) {
+	var _p1 = _p0;
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_evancz$elm_http$Http$queryEscape(_p1._0),
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'=',
+			_evancz$elm_http$Http$queryEscape(_p1._1)));
+};
+var _evancz$elm_http$Http$url = F2(
+	function (baseUrl, args) {
+		var _p2 = args;
+		if (_p2.ctor === '[]') {
+			return baseUrl;
+		} else {
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				baseUrl,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'?',
+					A2(
+						_elm_lang$core$String$join,
+						'&',
+						A2(_elm_lang$core$List$map, _evancz$elm_http$Http$queryPair, args))));
+		}
+	});
+var _evancz$elm_http$Http$Request = F4(
+	function (a, b, c, d) {
+		return {verb: a, headers: b, url: c, body: d};
+	});
+var _evancz$elm_http$Http$Settings = F5(
+	function (a, b, c, d, e) {
+		return {timeout: a, onStart: b, onProgress: c, desiredResponseType: d, withCredentials: e};
+	});
+var _evancz$elm_http$Http$Response = F5(
+	function (a, b, c, d, e) {
+		return {status: a, statusText: b, headers: c, url: d, value: e};
+	});
+var _evancz$elm_http$Http$TODO_implement_blob_in_another_library = {ctor: 'TODO_implement_blob_in_another_library'};
+var _evancz$elm_http$Http$TODO_implement_file_in_another_library = {ctor: 'TODO_implement_file_in_another_library'};
+var _evancz$elm_http$Http$BodyBlob = function (a) {
+	return {ctor: 'BodyBlob', _0: a};
+};
+var _evancz$elm_http$Http$BodyFormData = {ctor: 'BodyFormData'};
+var _evancz$elm_http$Http$ArrayBuffer = {ctor: 'ArrayBuffer'};
+var _evancz$elm_http$Http$BodyString = function (a) {
+	return {ctor: 'BodyString', _0: a};
+};
+var _evancz$elm_http$Http$string = _evancz$elm_http$Http$BodyString;
+var _evancz$elm_http$Http$Empty = {ctor: 'Empty'};
+var _evancz$elm_http$Http$empty = _evancz$elm_http$Http$Empty;
+var _evancz$elm_http$Http$FileData = F3(
+	function (a, b, c) {
+		return {ctor: 'FileData', _0: a, _1: b, _2: c};
+	});
+var _evancz$elm_http$Http$BlobData = F3(
+	function (a, b, c) {
+		return {ctor: 'BlobData', _0: a, _1: b, _2: c};
+	});
+var _evancz$elm_http$Http$blobData = _evancz$elm_http$Http$BlobData;
+var _evancz$elm_http$Http$StringData = F2(
+	function (a, b) {
+		return {ctor: 'StringData', _0: a, _1: b};
+	});
+var _evancz$elm_http$Http$stringData = _evancz$elm_http$Http$StringData;
+var _evancz$elm_http$Http$Blob = function (a) {
+	return {ctor: 'Blob', _0: a};
+};
+var _evancz$elm_http$Http$Text = function (a) {
+	return {ctor: 'Text', _0: a};
+};
+var _evancz$elm_http$Http$RawNetworkError = {ctor: 'RawNetworkError'};
+var _evancz$elm_http$Http$RawTimeout = {ctor: 'RawTimeout'};
+var _evancz$elm_http$Http$BadResponse = F2(
+	function (a, b) {
+		return {ctor: 'BadResponse', _0: a, _1: b};
+	});
+var _evancz$elm_http$Http$UnexpectedPayload = function (a) {
+	return {ctor: 'UnexpectedPayload', _0: a};
+};
+var _evancz$elm_http$Http$handleResponse = F2(
+	function (handle, response) {
+		if ((_elm_lang$core$Native_Utils.cmp(200, response.status) < 1) && (_elm_lang$core$Native_Utils.cmp(response.status, 300) < 0)) {
+			var _p3 = response.value;
+			if (_p3.ctor === 'Text') {
+				return handle(_p3._0);
+			} else {
+				return _elm_lang$core$Task$fail(
+					_evancz$elm_http$Http$UnexpectedPayload('Response body is a blob, expecting a string.'));
+			}
+		} else {
+			return _elm_lang$core$Task$fail(
+				A2(_evancz$elm_http$Http$BadResponse, response.status, response.statusText));
+		}
+	});
+var _evancz$elm_http$Http$NetworkError = {ctor: 'NetworkError'};
+var _evancz$elm_http$Http$Timeout = {ctor: 'Timeout'};
+var _evancz$elm_http$Http$promoteError = function (rawError) {
+	var _p4 = rawError;
+	if (_p4.ctor === 'RawTimeout') {
+		return _evancz$elm_http$Http$Timeout;
+	} else {
+		return _evancz$elm_http$Http$NetworkError;
+	}
+};
+var _evancz$elm_http$Http$getString = function (url) {
+	var request = {
+		verb: 'GET',
+		headers: _elm_lang$core$Native_List.fromArray(
+			[]),
+		url: url,
+		body: _evancz$elm_http$Http$empty
+	};
+	return A2(
+		_elm_lang$core$Task$andThen,
+		A2(
+			_elm_lang$core$Task$mapError,
+			_evancz$elm_http$Http$promoteError,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request)),
+		_evancz$elm_http$Http$handleResponse(_elm_lang$core$Task$succeed));
+};
+var _evancz$elm_http$Http$fromJson = F2(
+	function (decoder, response) {
+		var decode = function (str) {
+			var _p5 = A2(_elm_lang$core$Json_Decode$decodeString, decoder, str);
+			if (_p5.ctor === 'Ok') {
+				return _elm_lang$core$Task$succeed(_p5._0);
+			} else {
+				return _elm_lang$core$Task$fail(
+					_evancz$elm_http$Http$UnexpectedPayload(_p5._0));
+			}
+		};
+		return A2(
+			_elm_lang$core$Task$andThen,
+			A2(_elm_lang$core$Task$mapError, _evancz$elm_http$Http$promoteError, response),
+			_evancz$elm_http$Http$handleResponse(decode));
+	});
+var _evancz$elm_http$Http$get = F2(
+	function (decoder, url) {
+		var request = {
+			verb: 'GET',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[]),
+			url: url,
+			body: _evancz$elm_http$Http$empty
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+var _evancz$elm_http$Http$post = F3(
+	function (decoder, url, body) {
+		var request = {
+			verb: 'POST',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+
+var _elm_lang$elm_architecture_tutorial$Hero_Types$Hero = F2(
+	function (a, b) {
+		return {id: a, name: b};
+	});
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$Model = F2(
+	function (a, b) {
+		return {heroName: a, selectedHero: b};
+	});
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail = function (a) {
+	return {ctor: 'UpdateHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed = function (a) {
+	return {ctor: 'UpdateHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHero = function (a) {
+	return {ctor: 'UpdateHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$GoBack = {ctor: 'GoBack'};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroName = function (a) {
+	return {ctor: 'UpdateHeroName', _0: a};
+};
+
+var _elm_lang$elm_architecture_tutorial$App_Types$AppModel = F6(
+	function (a, b, c, d, e, f) {
+		return {title: a, heroesList: b, route: c, searchBox: d, heroDetailModel: e, newHeroName: f};
+	});
+var _elm_lang$elm_architecture_tutorial$App_Types$UpdateSearchBox = function (a) {
+	return {ctor: 'UpdateSearchBox', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SaveHeroFail = function (a) {
+	return {ctor: 'SaveHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SaveHeroSucceed = function (a) {
+	return {ctor: 'SaveHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SaveHero = {ctor: 'SaveHero'};
+var _elm_lang$elm_architecture_tutorial$App_Types$UpdateNewHeroName = function (a) {
+	return {ctor: 'UpdateNewHeroName', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroFail = function (a) {
+	return {ctor: 'DeleteHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroSucceed = function (a) {
+	return {ctor: 'DeleteHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHero = function (a) {
+	return {ctor: 'DeleteHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroFail = function (a) {
+	return {ctor: 'FetchHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed = function (a) {
+	return {ctor: 'FetchHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchFail = function (a) {
+	return {ctor: 'FetchFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed = function (a) {
+	return {ctor: 'FetchSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$ViewDetails = function (a) {
+	return {ctor: 'ViewDetails', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$SelectHero = function (a) {
+	return {ctor: 'SelectHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetail = function (a) {
+	return {ctor: 'HeroDetail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$NotFoundRoute = {ctor: 'NotFoundRoute'};
+var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetails = function (a) {
+	return {ctor: 'HeroDetails', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$Heroes = {ctor: 'Heroes'};
+var _elm_lang$elm_architecture_tutorial$App_Types$Dashboard = {ctor: 'Dashboard'};
+
+var _elm_lang$elm_architecture_tutorial$App_Rest$delete = function (url) {
+	var config = {
+		verb: 'DELETE',
+		headers: _elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+			]),
+		url: url,
+		body: _evancz$elm_http$Http$empty
+	};
+	return A2(
+		_evancz$elm_http$Http$fromJson,
+		_elm_lang$core$Json_Decode$succeed(
+			A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, '')),
+		A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$encodeHero = function (hero) {
+	return _elm_lang$core$Json_Encode$object(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{
+				ctor: '_Tuple2',
+				_0: 'id',
+				_1: _elm_lang$core$Json_Encode$int(hero.id)
+			},
+				{
+				ctor: '_Tuple2',
+				_0: 'name',
+				_1: _elm_lang$core$Json_Encode$string(hero.name)
+			}
+			]));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody = function (hero) {
+	return _evancz$elm_http$Http$string(
+		A2(
+			_elm_lang$core$Json_Encode$encode,
+			0,
+			_elm_lang$elm_architecture_tutorial$App_Rest$encodeHero(hero)));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero = A3(
+	_elm_lang$core$Json_Decode$object2,
+	_elm_lang$elm_architecture_tutorial$Hero_Types$Hero,
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['id']),
+		_elm_lang$core$Json_Decode$int),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['name']),
+		_elm_lang$core$Json_Decode$string));
+var _elm_lang$elm_architecture_tutorial$App_Rest$put = F2(
+	function (url, hero) {
+		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
+		var config = {
+			verb: 'PUT',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+				]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$post = F2(
+	function (url, hero) {
+		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
+		var config = {
+			verb: 'POST',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+				]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero = _elm_lang$core$Json_Decode$list(_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero);
+var _elm_lang$elm_architecture_tutorial$App_Rest$deleteHero = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroSucceed,
+		_elm_lang$elm_architecture_tutorial$App_Rest$delete(url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$saveHero = F2(
+	function (hero, url) {
+		return A3(
+			_elm_lang$core$Task$perform,
+			_elm_lang$elm_architecture_tutorial$App_Types$SaveHeroFail,
+			_elm_lang$elm_architecture_tutorial$App_Types$SaveHeroSucceed,
+			A2(_elm_lang$elm_architecture_tutorial$App_Rest$post, url, hero));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHero = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed,
+		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero, url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed,
+		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero, url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$heroes = _elm_lang$core$Native_List.fromArray(
+	[
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, 'Mr. Nice'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 2, 'Narco'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 3, 'Bombasto'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 4, 'Celeritas'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 5, 'Magneta'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 6, 'RubberMan'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 7, 'Dynama'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 8, 'Dr IQ'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 9, 'Magma'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 10, 'Tornado')
+	]);
+var _elm_lang$elm_architecture_tutorial$App_Rest$getHeroes = _elm_lang$elm_architecture_tutorial$App_Rest$heroes;
+
 //import Native.Json //
 
 var _elm_lang$virtual_dom$Native_VirtualDom = function() {
@@ -8075,840 +8641,6 @@ var _elm_lang$html$Html_App$beginnerProgram = function (_p1) {
 };
 var _elm_lang$html$Html_App$map = _elm_lang$virtual_dom$VirtualDom$map;
 
-var _elm_lang$html$Html_Attributes$attribute = _elm_lang$virtual_dom$VirtualDom$attribute;
-var _elm_lang$html$Html_Attributes$contextmenu = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$attribute, 'contextmenu', value);
-};
-var _elm_lang$html$Html_Attributes$draggable = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$attribute, 'draggable', value);
-};
-var _elm_lang$html$Html_Attributes$list = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$attribute, 'list', value);
-};
-var _elm_lang$html$Html_Attributes$maxlength = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$attribute,
-		'maxlength',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$datetime = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$attribute, 'datetime', value);
-};
-var _elm_lang$html$Html_Attributes$pubdate = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$attribute, 'pubdate', value);
-};
-var _elm_lang$html$Html_Attributes$colspan = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$attribute,
-		'colspan',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$rowspan = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$attribute,
-		'rowspan',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$property = _elm_lang$virtual_dom$VirtualDom$property;
-var _elm_lang$html$Html_Attributes$stringProperty = F2(
-	function (name, string) {
-		return A2(
-			_elm_lang$html$Html_Attributes$property,
-			name,
-			_elm_lang$core$Json_Encode$string(string));
-	});
-var _elm_lang$html$Html_Attributes$class = function (name) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'className', name);
-};
-var _elm_lang$html$Html_Attributes$id = function (name) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'id', name);
-};
-var _elm_lang$html$Html_Attributes$title = function (name) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'title', name);
-};
-var _elm_lang$html$Html_Attributes$accesskey = function ($char) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'accessKey',
-		_elm_lang$core$String$fromChar($char));
-};
-var _elm_lang$html$Html_Attributes$dir = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dir', value);
-};
-var _elm_lang$html$Html_Attributes$dropzone = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dropzone', value);
-};
-var _elm_lang$html$Html_Attributes$itemprop = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'itemprop', value);
-};
-var _elm_lang$html$Html_Attributes$lang = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'lang', value);
-};
-var _elm_lang$html$Html_Attributes$tabindex = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'tabIndex',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$charset = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'charset', value);
-};
-var _elm_lang$html$Html_Attributes$content = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'content', value);
-};
-var _elm_lang$html$Html_Attributes$httpEquiv = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'httpEquiv', value);
-};
-var _elm_lang$html$Html_Attributes$language = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'language', value);
-};
-var _elm_lang$html$Html_Attributes$src = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'src', value);
-};
-var _elm_lang$html$Html_Attributes$height = function (value) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'height',
-		_elm_lang$core$Basics$toString(value));
-};
-var _elm_lang$html$Html_Attributes$width = function (value) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'width',
-		_elm_lang$core$Basics$toString(value));
-};
-var _elm_lang$html$Html_Attributes$alt = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'alt', value);
-};
-var _elm_lang$html$Html_Attributes$preload = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'preload', value);
-};
-var _elm_lang$html$Html_Attributes$poster = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'poster', value);
-};
-var _elm_lang$html$Html_Attributes$kind = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'kind', value);
-};
-var _elm_lang$html$Html_Attributes$srclang = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'srclang', value);
-};
-var _elm_lang$html$Html_Attributes$sandbox = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'sandbox', value);
-};
-var _elm_lang$html$Html_Attributes$srcdoc = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'srcdoc', value);
-};
-var _elm_lang$html$Html_Attributes$type$ = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'type', value);
-};
-var _elm_lang$html$Html_Attributes$value = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'value', value);
-};
-var _elm_lang$html$Html_Attributes$defaultValue = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'defaultValue', value);
-};
-var _elm_lang$html$Html_Attributes$placeholder = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'placeholder', value);
-};
-var _elm_lang$html$Html_Attributes$accept = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'accept', value);
-};
-var _elm_lang$html$Html_Attributes$acceptCharset = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'acceptCharset', value);
-};
-var _elm_lang$html$Html_Attributes$action = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'action', value);
-};
-var _elm_lang$html$Html_Attributes$autocomplete = function (bool) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'autocomplete',
-		bool ? 'on' : 'off');
-};
-var _elm_lang$html$Html_Attributes$autosave = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'autosave', value);
-};
-var _elm_lang$html$Html_Attributes$enctype = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'enctype', value);
-};
-var _elm_lang$html$Html_Attributes$formaction = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'formAction', value);
-};
-var _elm_lang$html$Html_Attributes$minlength = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'minLength',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$method = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'method', value);
-};
-var _elm_lang$html$Html_Attributes$name = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'name', value);
-};
-var _elm_lang$html$Html_Attributes$pattern = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'pattern', value);
-};
-var _elm_lang$html$Html_Attributes$size = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'size',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$for = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'htmlFor', value);
-};
-var _elm_lang$html$Html_Attributes$form = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'form', value);
-};
-var _elm_lang$html$Html_Attributes$max = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'max', value);
-};
-var _elm_lang$html$Html_Attributes$min = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'min', value);
-};
-var _elm_lang$html$Html_Attributes$step = function (n) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'step', n);
-};
-var _elm_lang$html$Html_Attributes$cols = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'cols',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$rows = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'rows',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$wrap = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'wrap', value);
-};
-var _elm_lang$html$Html_Attributes$usemap = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'useMap', value);
-};
-var _elm_lang$html$Html_Attributes$shape = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'shape', value);
-};
-var _elm_lang$html$Html_Attributes$coords = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'coords', value);
-};
-var _elm_lang$html$Html_Attributes$challenge = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'challenge', value);
-};
-var _elm_lang$html$Html_Attributes$keytype = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'keytype', value);
-};
-var _elm_lang$html$Html_Attributes$align = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'align', value);
-};
-var _elm_lang$html$Html_Attributes$cite = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'cite', value);
-};
-var _elm_lang$html$Html_Attributes$href = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'href', value);
-};
-var _elm_lang$html$Html_Attributes$target = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'target', value);
-};
-var _elm_lang$html$Html_Attributes$downloadAs = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'download', value);
-};
-var _elm_lang$html$Html_Attributes$hreflang = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'hreflang', value);
-};
-var _elm_lang$html$Html_Attributes$media = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'media', value);
-};
-var _elm_lang$html$Html_Attributes$ping = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'ping', value);
-};
-var _elm_lang$html$Html_Attributes$rel = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'rel', value);
-};
-var _elm_lang$html$Html_Attributes$start = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'start',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$headers = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'headers', value);
-};
-var _elm_lang$html$Html_Attributes$scope = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'scope', value);
-};
-var _elm_lang$html$Html_Attributes$manifest = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'manifest', value);
-};
-var _elm_lang$html$Html_Attributes$boolProperty = F2(
-	function (name, bool) {
-		return A2(
-			_elm_lang$html$Html_Attributes$property,
-			name,
-			_elm_lang$core$Json_Encode$bool(bool));
-	});
-var _elm_lang$html$Html_Attributes$hidden = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'hidden', bool);
-};
-var _elm_lang$html$Html_Attributes$contenteditable = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'contentEditable', bool);
-};
-var _elm_lang$html$Html_Attributes$spellcheck = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'spellcheck', bool);
-};
-var _elm_lang$html$Html_Attributes$async = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'async', bool);
-};
-var _elm_lang$html$Html_Attributes$defer = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'defer', bool);
-};
-var _elm_lang$html$Html_Attributes$scoped = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'scoped', bool);
-};
-var _elm_lang$html$Html_Attributes$autoplay = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'autoplay', bool);
-};
-var _elm_lang$html$Html_Attributes$controls = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'controls', bool);
-};
-var _elm_lang$html$Html_Attributes$loop = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'loop', bool);
-};
-var _elm_lang$html$Html_Attributes$default = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'default', bool);
-};
-var _elm_lang$html$Html_Attributes$seamless = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'seamless', bool);
-};
-var _elm_lang$html$Html_Attributes$checked = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'checked', bool);
-};
-var _elm_lang$html$Html_Attributes$selected = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'selected', bool);
-};
-var _elm_lang$html$Html_Attributes$autofocus = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'autofocus', bool);
-};
-var _elm_lang$html$Html_Attributes$disabled = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'disabled', bool);
-};
-var _elm_lang$html$Html_Attributes$multiple = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'multiple', bool);
-};
-var _elm_lang$html$Html_Attributes$novalidate = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'noValidate', bool);
-};
-var _elm_lang$html$Html_Attributes$readonly = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'readOnly', bool);
-};
-var _elm_lang$html$Html_Attributes$required = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'required', bool);
-};
-var _elm_lang$html$Html_Attributes$ismap = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'isMap', value);
-};
-var _elm_lang$html$Html_Attributes$download = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'download', bool);
-};
-var _elm_lang$html$Html_Attributes$reversed = function (bool) {
-	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'reversed', bool);
-};
-var _elm_lang$html$Html_Attributes$classList = function (list) {
-	return _elm_lang$html$Html_Attributes$class(
-		A2(
-			_elm_lang$core$String$join,
-			' ',
-			A2(
-				_elm_lang$core$List$map,
-				_elm_lang$core$Basics$fst,
-				A2(_elm_lang$core$List$filter, _elm_lang$core$Basics$snd, list))));
-};
-var _elm_lang$html$Html_Attributes$style = _elm_lang$virtual_dom$VirtualDom$style;
-
-var _elm_lang$html$Html_Events$keyCode = A2(_elm_lang$core$Json_Decode_ops[':='], 'keyCode', _elm_lang$core$Json_Decode$int);
-var _elm_lang$html$Html_Events$targetChecked = A2(
-	_elm_lang$core$Json_Decode$at,
-	_elm_lang$core$Native_List.fromArray(
-		['target', 'checked']),
-	_elm_lang$core$Json_Decode$bool);
-var _elm_lang$html$Html_Events$targetValue = A2(
-	_elm_lang$core$Json_Decode$at,
-	_elm_lang$core$Native_List.fromArray(
-		['target', 'value']),
-	_elm_lang$core$Json_Decode$string);
-var _elm_lang$html$Html_Events$defaultOptions = _elm_lang$virtual_dom$VirtualDom$defaultOptions;
-var _elm_lang$html$Html_Events$onWithOptions = _elm_lang$virtual_dom$VirtualDom$onWithOptions;
-var _elm_lang$html$Html_Events$on = _elm_lang$virtual_dom$VirtualDom$on;
-var _elm_lang$html$Html_Events$onFocus = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'focus',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onBlur = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'blur',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onSubmitOptions = _elm_lang$core$Native_Utils.update(
-	_elm_lang$html$Html_Events$defaultOptions,
-	{preventDefault: true});
-var _elm_lang$html$Html_Events$onSubmit = function (msg) {
-	return A3(
-		_elm_lang$html$Html_Events$onWithOptions,
-		'submit',
-		_elm_lang$html$Html_Events$onSubmitOptions,
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onCheck = function (tagger) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'change',
-		A2(_elm_lang$core$Json_Decode$map, tagger, _elm_lang$html$Html_Events$targetChecked));
-};
-var _elm_lang$html$Html_Events$onInput = function (tagger) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'input',
-		A2(_elm_lang$core$Json_Decode$map, tagger, _elm_lang$html$Html_Events$targetValue));
-};
-var _elm_lang$html$Html_Events$onMouseOut = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'mouseout',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onMouseOver = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'mouseover',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onMouseLeave = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'mouseleave',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onMouseEnter = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'mouseenter',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onMouseUp = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'mouseup',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onMouseDown = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'mousedown',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onDoubleClick = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'dblclick',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$onClick = function (msg) {
-	return A2(
-		_elm_lang$html$Html_Events$on,
-		'click',
-		_elm_lang$core$Json_Decode$succeed(msg));
-};
-var _elm_lang$html$Html_Events$Options = F2(
-	function (a, b) {
-		return {stopPropagation: a, preventDefault: b};
-	});
-
-//import Dict, List, Maybe, Native.Scheduler //
-
-var _evancz$elm_http$Native_Http = function() {
-
-function send(settings, request)
-{
-	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-		var req = new XMLHttpRequest();
-
-		// start
-		if (settings.onStart.ctor === 'Just')
-		{
-			req.addEventListener('loadStart', function() {
-				var task = settings.onStart._0;
-				_elm_lang$core$Native_Scheduler.rawSpawn(task);
-			});
-		}
-
-		// progress
-		if (settings.onProgress.ctor === 'Just')
-		{
-			req.addEventListener('progress', function(event) {
-				var progress = !event.lengthComputable
-					? _elm_lang$core$Maybe$Nothing
-					: _elm_lang$core$Maybe$Just({
-						loaded: event.loaded,
-						total: event.total
-					});
-				var task = settings.onProgress._0(progress);
-				_elm_lang$core$Native_Scheduler.rawSpawn(task);
-			});
-		}
-
-		// end
-		req.addEventListener('error', function() {
-			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawNetworkError' }));
-		});
-
-		req.addEventListener('timeout', function() {
-			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawTimeout' }));
-		});
-
-		req.addEventListener('load', function() {
-			return callback(_elm_lang$core$Native_Scheduler.succeed(toResponse(req)));
-		});
-
-		req.open(request.verb, request.url, true);
-
-		// set all the headers
-		function setHeader(pair) {
-			req.setRequestHeader(pair._0, pair._1);
-		}
-		A2(_elm_lang$core$List$map, setHeader, request.headers);
-
-		// set the timeout
-		req.timeout = settings.timeout;
-
-		// enable this withCredentials thing
-		req.withCredentials = settings.withCredentials;
-
-		// ask for a specific MIME type for the response
-		if (settings.desiredResponseType.ctor === 'Just')
-		{
-			req.overrideMimeType(settings.desiredResponseType._0);
-		}
-
-		// actuall send the request
-		if(request.body.ctor === "BodyFormData")
-		{
-			req.send(request.body.formData)
-		}
-		else
-		{
-			req.send(request.body._0);
-		}
-
-		return function() {
-			req.abort();
-		};
-	});
-}
-
-
-// deal with responses
-
-function toResponse(req)
-{
-	var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
-	var response = tag === 'Blob' ? req.response : req.responseText;
-	return {
-		status: req.status,
-		statusText: req.statusText,
-		headers: parseHeaders(req.getAllResponseHeaders()),
-		url: req.responseURL,
-		value: { ctor: tag, _0: response }
-	};
-}
-
-
-function parseHeaders(rawHeaders)
-{
-	var headers = _elm_lang$core$Dict$empty;
-
-	if (!rawHeaders)
-	{
-		return headers;
-	}
-
-	var headerPairs = rawHeaders.split('\u000d\u000a');
-	for (var i = headerPairs.length; i--; )
-	{
-		var headerPair = headerPairs[i];
-		var index = headerPair.indexOf('\u003a\u0020');
-		if (index > 0)
-		{
-			var key = headerPair.substring(0, index);
-			var value = headerPair.substring(index + 2);
-
-			headers = A3(_elm_lang$core$Dict$update, key, function(oldValue) {
-				if (oldValue.ctor === 'Just')
-				{
-					return _elm_lang$core$Maybe$Just(value + ', ' + oldValue._0);
-				}
-				return _elm_lang$core$Maybe$Just(value);
-			}, headers);
-		}
-	}
-
-	return headers;
-}
-
-
-function multipart(dataList)
-{
-	var formData = new FormData();
-
-	while (dataList.ctor !== '[]')
-	{
-		var data = dataList._0;
-		if (data.ctor === 'StringData')
-		{
-			formData.append(data._0, data._1);
-		}
-		else
-		{
-			var fileName = data._1.ctor === 'Nothing'
-				? undefined
-				: data._1._0;
-			formData.append(data._0, data._2, fileName);
-		}
-		dataList = dataList._1;
-	}
-
-	return { ctor: 'BodyFormData', formData: formData };
-}
-
-
-function uriEncode(string)
-{
-	return encodeURIComponent(string);
-}
-
-function uriDecode(string)
-{
-	return decodeURIComponent(string);
-}
-
-return {
-	send: F2(send),
-	multipart: multipart,
-	uriEncode: uriEncode,
-	uriDecode: uriDecode
-};
-
-}();
-
-var _evancz$elm_http$Http$send = _evancz$elm_http$Native_Http.send;
-var _evancz$elm_http$Http$defaultSettings = {timeout: 0, onStart: _elm_lang$core$Maybe$Nothing, onProgress: _elm_lang$core$Maybe$Nothing, desiredResponseType: _elm_lang$core$Maybe$Nothing, withCredentials: false};
-var _evancz$elm_http$Http$multipart = _evancz$elm_http$Native_Http.multipart;
-var _evancz$elm_http$Http$uriDecode = _evancz$elm_http$Native_Http.uriDecode;
-var _evancz$elm_http$Http$uriEncode = _evancz$elm_http$Native_Http.uriEncode;
-var _evancz$elm_http$Http$queryEscape = function (string) {
-	return A2(
-		_elm_lang$core$String$join,
-		'+',
-		A2(
-			_elm_lang$core$String$split,
-			'%20',
-			_evancz$elm_http$Http$uriEncode(string)));
-};
-var _evancz$elm_http$Http$queryPair = function (_p0) {
-	var _p1 = _p0;
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		_evancz$elm_http$Http$queryEscape(_p1._0),
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			'=',
-			_evancz$elm_http$Http$queryEscape(_p1._1)));
-};
-var _evancz$elm_http$Http$url = F2(
-	function (baseUrl, args) {
-		var _p2 = args;
-		if (_p2.ctor === '[]') {
-			return baseUrl;
-		} else {
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				baseUrl,
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					'?',
-					A2(
-						_elm_lang$core$String$join,
-						'&',
-						A2(_elm_lang$core$List$map, _evancz$elm_http$Http$queryPair, args))));
-		}
-	});
-var _evancz$elm_http$Http$Request = F4(
-	function (a, b, c, d) {
-		return {verb: a, headers: b, url: c, body: d};
-	});
-var _evancz$elm_http$Http$Settings = F5(
-	function (a, b, c, d, e) {
-		return {timeout: a, onStart: b, onProgress: c, desiredResponseType: d, withCredentials: e};
-	});
-var _evancz$elm_http$Http$Response = F5(
-	function (a, b, c, d, e) {
-		return {status: a, statusText: b, headers: c, url: d, value: e};
-	});
-var _evancz$elm_http$Http$TODO_implement_blob_in_another_library = {ctor: 'TODO_implement_blob_in_another_library'};
-var _evancz$elm_http$Http$TODO_implement_file_in_another_library = {ctor: 'TODO_implement_file_in_another_library'};
-var _evancz$elm_http$Http$BodyBlob = function (a) {
-	return {ctor: 'BodyBlob', _0: a};
-};
-var _evancz$elm_http$Http$BodyFormData = {ctor: 'BodyFormData'};
-var _evancz$elm_http$Http$ArrayBuffer = {ctor: 'ArrayBuffer'};
-var _evancz$elm_http$Http$BodyString = function (a) {
-	return {ctor: 'BodyString', _0: a};
-};
-var _evancz$elm_http$Http$string = _evancz$elm_http$Http$BodyString;
-var _evancz$elm_http$Http$Empty = {ctor: 'Empty'};
-var _evancz$elm_http$Http$empty = _evancz$elm_http$Http$Empty;
-var _evancz$elm_http$Http$FileData = F3(
-	function (a, b, c) {
-		return {ctor: 'FileData', _0: a, _1: b, _2: c};
-	});
-var _evancz$elm_http$Http$BlobData = F3(
-	function (a, b, c) {
-		return {ctor: 'BlobData', _0: a, _1: b, _2: c};
-	});
-var _evancz$elm_http$Http$blobData = _evancz$elm_http$Http$BlobData;
-var _evancz$elm_http$Http$StringData = F2(
-	function (a, b) {
-		return {ctor: 'StringData', _0: a, _1: b};
-	});
-var _evancz$elm_http$Http$stringData = _evancz$elm_http$Http$StringData;
-var _evancz$elm_http$Http$Blob = function (a) {
-	return {ctor: 'Blob', _0: a};
-};
-var _evancz$elm_http$Http$Text = function (a) {
-	return {ctor: 'Text', _0: a};
-};
-var _evancz$elm_http$Http$RawNetworkError = {ctor: 'RawNetworkError'};
-var _evancz$elm_http$Http$RawTimeout = {ctor: 'RawTimeout'};
-var _evancz$elm_http$Http$BadResponse = F2(
-	function (a, b) {
-		return {ctor: 'BadResponse', _0: a, _1: b};
-	});
-var _evancz$elm_http$Http$UnexpectedPayload = function (a) {
-	return {ctor: 'UnexpectedPayload', _0: a};
-};
-var _evancz$elm_http$Http$handleResponse = F2(
-	function (handle, response) {
-		if ((_elm_lang$core$Native_Utils.cmp(200, response.status) < 1) && (_elm_lang$core$Native_Utils.cmp(response.status, 300) < 0)) {
-			var _p3 = response.value;
-			if (_p3.ctor === 'Text') {
-				return handle(_p3._0);
-			} else {
-				return _elm_lang$core$Task$fail(
-					_evancz$elm_http$Http$UnexpectedPayload('Response body is a blob, expecting a string.'));
-			}
-		} else {
-			return _elm_lang$core$Task$fail(
-				A2(_evancz$elm_http$Http$BadResponse, response.status, response.statusText));
-		}
-	});
-var _evancz$elm_http$Http$NetworkError = {ctor: 'NetworkError'};
-var _evancz$elm_http$Http$Timeout = {ctor: 'Timeout'};
-var _evancz$elm_http$Http$promoteError = function (rawError) {
-	var _p4 = rawError;
-	if (_p4.ctor === 'RawTimeout') {
-		return _evancz$elm_http$Http$Timeout;
-	} else {
-		return _evancz$elm_http$Http$NetworkError;
-	}
-};
-var _evancz$elm_http$Http$getString = function (url) {
-	var request = {
-		verb: 'GET',
-		headers: _elm_lang$core$Native_List.fromArray(
-			[]),
-		url: url,
-		body: _evancz$elm_http$Http$empty
-	};
-	return A2(
-		_elm_lang$core$Task$andThen,
-		A2(
-			_elm_lang$core$Task$mapError,
-			_evancz$elm_http$Http$promoteError,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request)),
-		_evancz$elm_http$Http$handleResponse(_elm_lang$core$Task$succeed));
-};
-var _evancz$elm_http$Http$fromJson = F2(
-	function (decoder, response) {
-		var decode = function (str) {
-			var _p5 = A2(_elm_lang$core$Json_Decode$decodeString, decoder, str);
-			if (_p5.ctor === 'Ok') {
-				return _elm_lang$core$Task$succeed(_p5._0);
-			} else {
-				return _elm_lang$core$Task$fail(
-					_evancz$elm_http$Http$UnexpectedPayload(_p5._0));
-			}
-		};
-		return A2(
-			_elm_lang$core$Task$andThen,
-			A2(_elm_lang$core$Task$mapError, _evancz$elm_http$Http$promoteError, response),
-			_evancz$elm_http$Http$handleResponse(decode));
-	});
-var _evancz$elm_http$Http$get = F2(
-	function (decoder, url) {
-		var request = {
-			verb: 'GET',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[]),
-			url: url,
-			body: _evancz$elm_http$Http$empty
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-var _evancz$elm_http$Http$post = F3(
-	function (decoder, url, body) {
-		var request = {
-			verb: 'POST',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-
-var _elm_lang$elm_architecture_tutorial$Hero_Types$Hero = F2(
-	function (a, b) {
-		return {id: a, name: b};
-	});
-
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$Model = F2(
-	function (a, b) {
-		return {heroName: a, selectedHero: b};
-	});
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail = function (a) {
-	return {ctor: 'UpdateHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed = function (a) {
-	return {ctor: 'UpdateHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHero = function (a) {
-	return {ctor: 'UpdateHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$GoBack = {ctor: 'GoBack'};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroName = function (a) {
-	return {ctor: 'UpdateHeroName', _0: a};
-};
-
 var _elm_lang$navigation$Native_Navigation = function() {
 
 function go(n)
@@ -9434,41 +9166,35 @@ var _evancz$url_parser$UrlParser$format = F2(
 				}));
 	});
 
-var _elm_lang$elm_architecture_tutorial$Routing$NotFoundRoute = {ctor: 'NotFoundRoute'};
 var _elm_lang$elm_architecture_tutorial$Routing$routeFromResult = function (result) {
 	var _p0 = result;
 	if (_p0.ctor === 'Ok') {
 		return _p0._0;
 	} else {
-		return _elm_lang$elm_architecture_tutorial$Routing$NotFoundRoute;
+		return _elm_lang$elm_architecture_tutorial$App_Types$NotFoundRoute;
 	}
 };
-var _elm_lang$elm_architecture_tutorial$Routing$HeroDetails = function (a) {
-	return {ctor: 'HeroDetails', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Routing$Heroes = {ctor: 'Heroes'};
-var _elm_lang$elm_architecture_tutorial$Routing$Dashboard = {ctor: 'Dashboard'};
 var _elm_lang$elm_architecture_tutorial$Routing$matchers = _evancz$url_parser$UrlParser$oneOf(
 	_elm_lang$core$Native_List.fromArray(
 		[
 			A2(
 			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$Routing$Dashboard,
+			_elm_lang$elm_architecture_tutorial$App_Types$Dashboard,
 			_evancz$url_parser$UrlParser$s('')),
 			A2(
 			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$Routing$HeroDetails,
+			_elm_lang$elm_architecture_tutorial$App_Types$HeroDetails,
 			A2(
 				_evancz$url_parser$UrlParser_ops['</>'],
 				_evancz$url_parser$UrlParser$s('heroes'),
 				_evancz$url_parser$UrlParser$int)),
 			A2(
 			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$Routing$Heroes,
+			_elm_lang$elm_architecture_tutorial$App_Types$Heroes,
 			_evancz$url_parser$UrlParser$s('heroes')),
 			A2(
 			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$Routing$Dashboard,
+			_elm_lang$elm_architecture_tutorial$App_Types$Dashboard,
 			_evancz$url_parser$UrlParser$s('dashboard'))
 		]));
 var _elm_lang$elm_architecture_tutorial$Routing$hashParser = function (location) {
@@ -9479,185 +9205,6 @@ var _elm_lang$elm_architecture_tutorial$Routing$hashParser = function (location)
 		A2(_elm_lang$core$String$dropLeft, 1, location.hash));
 };
 var _elm_lang$elm_architecture_tutorial$Routing$parser = _elm_lang$navigation$Navigation$makeParser(_elm_lang$elm_architecture_tutorial$Routing$hashParser);
-
-var _elm_lang$elm_architecture_tutorial$App_Types$AppModel = F6(
-	function (a, b, c, d, e, f) {
-		return {title: a, heroesList: b, route: c, searchBox: d, heroDetailModel: e, newHeroName: f};
-	});
-var _elm_lang$elm_architecture_tutorial$App_Types$UpdateSearchBox = function (a) {
-	return {ctor: 'UpdateSearchBox', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$SaveHeroFail = function (a) {
-	return {ctor: 'SaveHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$SaveHeroSucceed = function (a) {
-	return {ctor: 'SaveHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$SaveHero = {ctor: 'SaveHero'};
-var _elm_lang$elm_architecture_tutorial$App_Types$UpdateNewHeroName = function (a) {
-	return {ctor: 'UpdateNewHeroName', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroFail = function (a) {
-	return {ctor: 'DeleteHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroSucceed = function (a) {
-	return {ctor: 'DeleteHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$DeleteHero = function (a) {
-	return {ctor: 'DeleteHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroFail = function (a) {
-	return {ctor: 'FetchHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed = function (a) {
-	return {ctor: 'FetchHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$FetchFail = function (a) {
-	return {ctor: 'FetchFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed = function (a) {
-	return {ctor: 'FetchSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$ViewDetails = function (a) {
-	return {ctor: 'ViewDetails', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$SelectHero = function (a) {
-	return {ctor: 'SelectHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetail = function (a) {
-	return {ctor: 'HeroDetail', _0: a};
-};
-
-var _elm_lang$elm_architecture_tutorial$App_Rest$delete = function (url) {
-	var config = {
-		verb: 'DELETE',
-		headers: _elm_lang$core$Native_List.fromArray(
-			[
-				{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-			]),
-		url: url,
-		body: _evancz$elm_http$Http$empty
-	};
-	return A2(
-		_evancz$elm_http$Http$fromJson,
-		_elm_lang$core$Json_Decode$succeed(
-			A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, '')),
-		A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$encodeHero = function (hero) {
-	return _elm_lang$core$Json_Encode$object(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				{
-				ctor: '_Tuple2',
-				_0: 'id',
-				_1: _elm_lang$core$Json_Encode$int(hero.id)
-			},
-				{
-				ctor: '_Tuple2',
-				_0: 'name',
-				_1: _elm_lang$core$Json_Encode$string(hero.name)
-			}
-			]));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody = function (hero) {
-	return _evancz$elm_http$Http$string(
-		A2(
-			_elm_lang$core$Json_Encode$encode,
-			0,
-			_elm_lang$elm_architecture_tutorial$App_Rest$encodeHero(hero)));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero = A3(
-	_elm_lang$core$Json_Decode$object2,
-	_elm_lang$elm_architecture_tutorial$Hero_Types$Hero,
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['id']),
-		_elm_lang$core$Json_Decode$int),
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['name']),
-		_elm_lang$core$Json_Decode$string));
-var _elm_lang$elm_architecture_tutorial$App_Rest$put = F2(
-	function (url, hero) {
-		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
-		var config = {
-			verb: 'PUT',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-				]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-	});
-var _elm_lang$elm_architecture_tutorial$App_Rest$post = F2(
-	function (url, hero) {
-		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
-		var config = {
-			verb: 'POST',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-				]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-	});
-var _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero = _elm_lang$core$Json_Decode$list(_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero);
-var _elm_lang$elm_architecture_tutorial$App_Rest$deleteHero = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroFail,
-		_elm_lang$elm_architecture_tutorial$App_Types$DeleteHeroSucceed,
-		_elm_lang$elm_architecture_tutorial$App_Rest$delete(url));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$saveHero = F2(
-	function (hero, url) {
-		return A3(
-			_elm_lang$core$Task$perform,
-			_elm_lang$elm_architecture_tutorial$App_Types$SaveHeroFail,
-			_elm_lang$elm_architecture_tutorial$App_Types$SaveHeroSucceed,
-			A2(_elm_lang$elm_architecture_tutorial$App_Rest$post, url, hero));
-	});
-var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHero = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
-		_elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero, url));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
-		_elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero, url));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$heroes = _elm_lang$core$Native_List.fromArray(
-	[
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, 'Mr. Nice'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 2, 'Narco'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 3, 'Bombasto'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 4, 'Celeritas'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 5, 'Magneta'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 6, 'RubberMan'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 7, 'Dynama'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 8, 'Dr IQ'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 9, 'Magma'),
-		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 10, 'Tornado')
-	]);
-var _elm_lang$elm_architecture_tutorial$App_Rest$getHeroes = _elm_lang$elm_architecture_tutorial$App_Rest$heroes;
 
 var _elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero = F2(
 	function (hero, url) {
@@ -9748,6 +9295,459 @@ var _elm_lang$elm_architecture_tutorial$HeroDetail_State$init = function () {
 		_elm_lang$core$Native_List.fromArray(
 			[]));
 }();
+
+var _elm_lang$html$Html_Attributes$attribute = _elm_lang$virtual_dom$VirtualDom$attribute;
+var _elm_lang$html$Html_Attributes$contextmenu = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'contextmenu', value);
+};
+var _elm_lang$html$Html_Attributes$draggable = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'draggable', value);
+};
+var _elm_lang$html$Html_Attributes$list = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'list', value);
+};
+var _elm_lang$html$Html_Attributes$maxlength = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'maxlength',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$datetime = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'datetime', value);
+};
+var _elm_lang$html$Html_Attributes$pubdate = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'pubdate', value);
+};
+var _elm_lang$html$Html_Attributes$colspan = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'colspan',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$rowspan = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'rowspan',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$property = _elm_lang$virtual_dom$VirtualDom$property;
+var _elm_lang$html$Html_Attributes$stringProperty = F2(
+	function (name, string) {
+		return A2(
+			_elm_lang$html$Html_Attributes$property,
+			name,
+			_elm_lang$core$Json_Encode$string(string));
+	});
+var _elm_lang$html$Html_Attributes$class = function (name) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'className', name);
+};
+var _elm_lang$html$Html_Attributes$id = function (name) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'id', name);
+};
+var _elm_lang$html$Html_Attributes$title = function (name) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'title', name);
+};
+var _elm_lang$html$Html_Attributes$accesskey = function ($char) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'accessKey',
+		_elm_lang$core$String$fromChar($char));
+};
+var _elm_lang$html$Html_Attributes$dir = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dir', value);
+};
+var _elm_lang$html$Html_Attributes$dropzone = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dropzone', value);
+};
+var _elm_lang$html$Html_Attributes$itemprop = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'itemprop', value);
+};
+var _elm_lang$html$Html_Attributes$lang = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'lang', value);
+};
+var _elm_lang$html$Html_Attributes$tabindex = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'tabIndex',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$charset = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'charset', value);
+};
+var _elm_lang$html$Html_Attributes$content = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'content', value);
+};
+var _elm_lang$html$Html_Attributes$httpEquiv = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'httpEquiv', value);
+};
+var _elm_lang$html$Html_Attributes$language = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'language', value);
+};
+var _elm_lang$html$Html_Attributes$src = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'src', value);
+};
+var _elm_lang$html$Html_Attributes$height = function (value) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'height',
+		_elm_lang$core$Basics$toString(value));
+};
+var _elm_lang$html$Html_Attributes$width = function (value) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'width',
+		_elm_lang$core$Basics$toString(value));
+};
+var _elm_lang$html$Html_Attributes$alt = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'alt', value);
+};
+var _elm_lang$html$Html_Attributes$preload = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'preload', value);
+};
+var _elm_lang$html$Html_Attributes$poster = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'poster', value);
+};
+var _elm_lang$html$Html_Attributes$kind = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'kind', value);
+};
+var _elm_lang$html$Html_Attributes$srclang = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'srclang', value);
+};
+var _elm_lang$html$Html_Attributes$sandbox = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'sandbox', value);
+};
+var _elm_lang$html$Html_Attributes$srcdoc = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'srcdoc', value);
+};
+var _elm_lang$html$Html_Attributes$type$ = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'type', value);
+};
+var _elm_lang$html$Html_Attributes$value = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'value', value);
+};
+var _elm_lang$html$Html_Attributes$defaultValue = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'defaultValue', value);
+};
+var _elm_lang$html$Html_Attributes$placeholder = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'placeholder', value);
+};
+var _elm_lang$html$Html_Attributes$accept = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'accept', value);
+};
+var _elm_lang$html$Html_Attributes$acceptCharset = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'acceptCharset', value);
+};
+var _elm_lang$html$Html_Attributes$action = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'action', value);
+};
+var _elm_lang$html$Html_Attributes$autocomplete = function (bool) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'autocomplete',
+		bool ? 'on' : 'off');
+};
+var _elm_lang$html$Html_Attributes$autosave = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'autosave', value);
+};
+var _elm_lang$html$Html_Attributes$enctype = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'enctype', value);
+};
+var _elm_lang$html$Html_Attributes$formaction = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'formAction', value);
+};
+var _elm_lang$html$Html_Attributes$minlength = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'minLength',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$method = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'method', value);
+};
+var _elm_lang$html$Html_Attributes$name = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'name', value);
+};
+var _elm_lang$html$Html_Attributes$pattern = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'pattern', value);
+};
+var _elm_lang$html$Html_Attributes$size = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'size',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$for = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'htmlFor', value);
+};
+var _elm_lang$html$Html_Attributes$form = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'form', value);
+};
+var _elm_lang$html$Html_Attributes$max = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'max', value);
+};
+var _elm_lang$html$Html_Attributes$min = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'min', value);
+};
+var _elm_lang$html$Html_Attributes$step = function (n) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'step', n);
+};
+var _elm_lang$html$Html_Attributes$cols = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'cols',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$rows = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'rows',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$wrap = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'wrap', value);
+};
+var _elm_lang$html$Html_Attributes$usemap = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'useMap', value);
+};
+var _elm_lang$html$Html_Attributes$shape = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'shape', value);
+};
+var _elm_lang$html$Html_Attributes$coords = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'coords', value);
+};
+var _elm_lang$html$Html_Attributes$challenge = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'challenge', value);
+};
+var _elm_lang$html$Html_Attributes$keytype = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'keytype', value);
+};
+var _elm_lang$html$Html_Attributes$align = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'align', value);
+};
+var _elm_lang$html$Html_Attributes$cite = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'cite', value);
+};
+var _elm_lang$html$Html_Attributes$href = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'href', value);
+};
+var _elm_lang$html$Html_Attributes$target = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'target', value);
+};
+var _elm_lang$html$Html_Attributes$downloadAs = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'download', value);
+};
+var _elm_lang$html$Html_Attributes$hreflang = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'hreflang', value);
+};
+var _elm_lang$html$Html_Attributes$media = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'media', value);
+};
+var _elm_lang$html$Html_Attributes$ping = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'ping', value);
+};
+var _elm_lang$html$Html_Attributes$rel = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'rel', value);
+};
+var _elm_lang$html$Html_Attributes$start = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$stringProperty,
+		'start',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$headers = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'headers', value);
+};
+var _elm_lang$html$Html_Attributes$scope = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'scope', value);
+};
+var _elm_lang$html$Html_Attributes$manifest = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'manifest', value);
+};
+var _elm_lang$html$Html_Attributes$boolProperty = F2(
+	function (name, bool) {
+		return A2(
+			_elm_lang$html$Html_Attributes$property,
+			name,
+			_elm_lang$core$Json_Encode$bool(bool));
+	});
+var _elm_lang$html$Html_Attributes$hidden = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'hidden', bool);
+};
+var _elm_lang$html$Html_Attributes$contenteditable = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'contentEditable', bool);
+};
+var _elm_lang$html$Html_Attributes$spellcheck = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'spellcheck', bool);
+};
+var _elm_lang$html$Html_Attributes$async = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'async', bool);
+};
+var _elm_lang$html$Html_Attributes$defer = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'defer', bool);
+};
+var _elm_lang$html$Html_Attributes$scoped = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'scoped', bool);
+};
+var _elm_lang$html$Html_Attributes$autoplay = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'autoplay', bool);
+};
+var _elm_lang$html$Html_Attributes$controls = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'controls', bool);
+};
+var _elm_lang$html$Html_Attributes$loop = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'loop', bool);
+};
+var _elm_lang$html$Html_Attributes$default = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'default', bool);
+};
+var _elm_lang$html$Html_Attributes$seamless = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'seamless', bool);
+};
+var _elm_lang$html$Html_Attributes$checked = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'checked', bool);
+};
+var _elm_lang$html$Html_Attributes$selected = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'selected', bool);
+};
+var _elm_lang$html$Html_Attributes$autofocus = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'autofocus', bool);
+};
+var _elm_lang$html$Html_Attributes$disabled = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'disabled', bool);
+};
+var _elm_lang$html$Html_Attributes$multiple = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'multiple', bool);
+};
+var _elm_lang$html$Html_Attributes$novalidate = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'noValidate', bool);
+};
+var _elm_lang$html$Html_Attributes$readonly = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'readOnly', bool);
+};
+var _elm_lang$html$Html_Attributes$required = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'required', bool);
+};
+var _elm_lang$html$Html_Attributes$ismap = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'isMap', value);
+};
+var _elm_lang$html$Html_Attributes$download = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'download', bool);
+};
+var _elm_lang$html$Html_Attributes$reversed = function (bool) {
+	return A2(_elm_lang$html$Html_Attributes$boolProperty, 'reversed', bool);
+};
+var _elm_lang$html$Html_Attributes$classList = function (list) {
+	return _elm_lang$html$Html_Attributes$class(
+		A2(
+			_elm_lang$core$String$join,
+			' ',
+			A2(
+				_elm_lang$core$List$map,
+				_elm_lang$core$Basics$fst,
+				A2(_elm_lang$core$List$filter, _elm_lang$core$Basics$snd, list))));
+};
+var _elm_lang$html$Html_Attributes$style = _elm_lang$virtual_dom$VirtualDom$style;
+
+var _elm_lang$html$Html_Events$keyCode = A2(_elm_lang$core$Json_Decode_ops[':='], 'keyCode', _elm_lang$core$Json_Decode$int);
+var _elm_lang$html$Html_Events$targetChecked = A2(
+	_elm_lang$core$Json_Decode$at,
+	_elm_lang$core$Native_List.fromArray(
+		['target', 'checked']),
+	_elm_lang$core$Json_Decode$bool);
+var _elm_lang$html$Html_Events$targetValue = A2(
+	_elm_lang$core$Json_Decode$at,
+	_elm_lang$core$Native_List.fromArray(
+		['target', 'value']),
+	_elm_lang$core$Json_Decode$string);
+var _elm_lang$html$Html_Events$defaultOptions = _elm_lang$virtual_dom$VirtualDom$defaultOptions;
+var _elm_lang$html$Html_Events$onWithOptions = _elm_lang$virtual_dom$VirtualDom$onWithOptions;
+var _elm_lang$html$Html_Events$on = _elm_lang$virtual_dom$VirtualDom$on;
+var _elm_lang$html$Html_Events$onFocus = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'focus',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onBlur = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'blur',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onSubmitOptions = _elm_lang$core$Native_Utils.update(
+	_elm_lang$html$Html_Events$defaultOptions,
+	{preventDefault: true});
+var _elm_lang$html$Html_Events$onSubmit = function (msg) {
+	return A3(
+		_elm_lang$html$Html_Events$onWithOptions,
+		'submit',
+		_elm_lang$html$Html_Events$onSubmitOptions,
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onCheck = function (tagger) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'change',
+		A2(_elm_lang$core$Json_Decode$map, tagger, _elm_lang$html$Html_Events$targetChecked));
+};
+var _elm_lang$html$Html_Events$onInput = function (tagger) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'input',
+		A2(_elm_lang$core$Json_Decode$map, tagger, _elm_lang$html$Html_Events$targetValue));
+};
+var _elm_lang$html$Html_Events$onMouseOut = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'mouseout',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onMouseOver = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'mouseover',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onMouseLeave = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'mouseleave',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onMouseEnter = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'mouseenter',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onMouseUp = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'mouseup',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onMouseDown = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'mousedown',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onDoubleClick = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'dblclick',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$onClick = function (msg) {
+	return A2(
+		_elm_lang$html$Html_Events$on,
+		'click',
+		_elm_lang$core$Json_Decode$succeed(msg));
+};
+var _elm_lang$html$Html_Events$Options = F2(
+	function (a, b) {
+		return {stopPropagation: a, preventDefault: b};
+	});
 
 var _elm_lang$elm_architecture_tutorial$HeroDetail_View$root = function (maybeHero) {
 	var _p0 = maybeHero;
@@ -9843,15 +9843,177 @@ var _elm_lang$elm_architecture_tutorial$HeroDetail_View$root = function (maybeHe
 	}
 };
 
-var _elm_lang$elm_architecture_tutorial$App$noBubble = {stopPropagation: true, preventDefault: true};
-var _elm_lang$elm_architecture_tutorial$App$otherClick = function (message) {
+var _elm_lang$elm_architecture_tutorial$Heroes_View$addSelectedClass = function (bool) {
+	return bool ? _elm_lang$html$Html_Attributes$class('selected') : _elm_lang$html$Html_Attributes$class('');
+};
+var _elm_lang$elm_architecture_tutorial$Heroes_View$noBubble = {stopPropagation: true, preventDefault: true};
+var _elm_lang$elm_architecture_tutorial$Heroes_View$otherClick = function (message) {
 	return A3(
 		_elm_lang$html$Html_Events$onWithOptions,
 		'click',
-		_elm_lang$elm_architecture_tutorial$App$noBubble,
+		_elm_lang$elm_architecture_tutorial$Heroes_View$noBubble,
 		_elm_lang$core$Json_Decode$succeed(message));
 };
-var _elm_lang$elm_architecture_tutorial$App$searchHero = F2(
+var _elm_lang$elm_architecture_tutorial$Heroes_View$showHero = F2(
+	function (hero2, hero) {
+		return A2(
+			_elm_lang$html$Html$li,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Events$onClick(
+					_elm_lang$elm_architecture_tutorial$App_Types$SelectHero(hero)),
+					_elm_lang$elm_architecture_tutorial$Heroes_View$addSelectedClass(
+					_elm_lang$core$Native_Utils.eq(hero2, hero))
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('badge')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							_elm_lang$core$Basics$toString(hero.id))
+						])),
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							A2(_elm_lang$core$Basics_ops['++'], ' ', hero.name))
+						])),
+					A2(
+					_elm_lang$html$Html$button,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('delete'),
+							_elm_lang$elm_architecture_tutorial$Heroes_View$otherClick(
+							_elm_lang$elm_architecture_tutorial$App_Types$DeleteHero(hero))
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('x')
+						]))
+				]));
+	});
+var _elm_lang$elm_architecture_tutorial$Heroes_View$miniDetail = function (maybeHero) {
+	var _p0 = maybeHero;
+	if (_p0.ctor === 'Just') {
+		var _p1 = _p0._0;
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$h2,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								_elm_lang$core$String$toUpper(_p1.name),
+								' is my hero'))
+						])),
+					A2(
+					_elm_lang$html$Html$button,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Events$onClick(
+							_elm_lang$elm_architecture_tutorial$App_Types$ViewDetails(_p1))
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('View Details')
+						]))
+				]));
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	}
+};
+var _elm_lang$elm_architecture_tutorial$Heroes_View$root = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h2,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('My Heroes')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$label,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Hero name:')
+							])),
+						A2(
+						_elm_lang$html$Html$input,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$type$('text'),
+								_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$App_Types$UpdateNewHeroName),
+								_elm_lang$html$Html_Attributes$value(
+								A2(_elm_lang$core$Maybe$withDefault, '', model.newHeroName))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						A2(
+						_elm_lang$html$Html$button,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Events$onClick(_elm_lang$elm_architecture_tutorial$App_Types$SaveHero)
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Add')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$ul,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('heroes')
+					]),
+				A2(
+					_elm_lang$core$List$map,
+					_elm_lang$elm_architecture_tutorial$Heroes_View$showHero(
+						A2(
+							_elm_lang$core$Maybe$withDefault,
+							A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, ''),
+							model.heroDetailModel.selectedHero)),
+					model.heroesList)),
+				_elm_lang$elm_architecture_tutorial$Heroes_View$miniDetail(model.heroDetailModel.selectedHero)
+			]));
+};
+
+var _elm_lang$elm_architecture_tutorial$HeroSearch_View$searchHero = F2(
 	function (string, heroesList) {
 		return A2(
 			_elm_lang$core$List$filter,
@@ -9863,7 +10025,7 @@ var _elm_lang$elm_architecture_tutorial$App$searchHero = F2(
 			},
 			heroesList);
 	});
-var _elm_lang$elm_architecture_tutorial$App$heroSearchItem = function (hero) {
+var _elm_lang$elm_architecture_tutorial$HeroSearch_View$heroSearchItem = function (hero) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -9877,14 +10039,14 @@ var _elm_lang$elm_architecture_tutorial$App$heroSearchItem = function (hero) {
 				_elm_lang$html$Html$text(hero.name)
 			]));
 };
-var _elm_lang$elm_architecture_tutorial$App$heroSearch = function (model) {
+var _elm_lang$elm_architecture_tutorial$HeroSearch_View$root = function (model) {
 	var heroesList = function () {
 		var _p0 = model.searchBox;
 		if (_p0.ctor === 'Just') {
 			return A2(
 				_elm_lang$core$List$map,
-				_elm_lang$elm_architecture_tutorial$App$heroSearchItem,
-				A2(_elm_lang$elm_architecture_tutorial$App$searchHero, _p0._0, model.heroesList));
+				_elm_lang$elm_architecture_tutorial$HeroSearch_View$heroSearchItem,
+				A2(_elm_lang$elm_architecture_tutorial$HeroSearch_View$searchHero, _p0._0, model.heroesList));
 		} else {
 			return _elm_lang$core$Native_List.fromArray(
 				[
@@ -9927,50 +10089,8 @@ var _elm_lang$elm_architecture_tutorial$App$heroSearch = function (model) {
 				heroesList)
 			]));
 };
-var _elm_lang$elm_architecture_tutorial$App$miniDetail = function (maybeHero) {
-	var _p1 = maybeHero;
-	if (_p1.ctor === 'Just') {
-		var _p2 = _p1._0;
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$h2,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								_elm_lang$core$String$toUpper(_p2.name),
-								' is my hero'))
-						])),
-					A2(
-					_elm_lang$html$Html$button,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Events$onClick(
-							_elm_lang$elm_architecture_tutorial$App_Types$ViewDetails(_p2))
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('View Details')
-						]))
-				]));
-	} else {
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			_elm_lang$core$Native_List.fromArray(
-				[]));
-	}
-};
-var _elm_lang$elm_architecture_tutorial$App$heroDashboard = function (hero) {
+
+var _elm_lang$elm_architecture_tutorial$Dashboard_View$heroDashboard = function (hero) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -10000,20 +10120,130 @@ var _elm_lang$elm_architecture_tutorial$App$heroDashboard = function (hero) {
 					]))
 			]));
 };
-var _elm_lang$elm_architecture_tutorial$App$dashboardView = function (list) {
+var _elm_lang$elm_architecture_tutorial$Dashboard_View$dashboardView = function (list) {
 	return A2(
 		_elm_lang$core$List$map,
-		_elm_lang$elm_architecture_tutorial$App$heroDashboard,
+		_elm_lang$elm_architecture_tutorial$Dashboard_View$heroDashboard,
 		A2(
 			_elm_lang$core$List$take,
 			4,
 			A2(_elm_lang$core$List$drop, 1, list)));
 };
-var _elm_lang$elm_architecture_tutorial$App$urlUpdate = F2(
+var _elm_lang$elm_architecture_tutorial$Dashboard_View$root = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h3,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Top Heroes')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$elm_architecture_tutorial$Dashboard_View$dashboardView(model.heroesList)),
+				_elm_lang$elm_architecture_tutorial$HeroSearch_View$root(model)
+			]));
+};
+
+var _elm_lang$elm_architecture_tutorial$App_View$addActiveClass = F2(
+	function (route, c) {
+		return _elm_lang$core$Native_Utils.eq(route, c) ? _elm_lang$html$Html_Attributes$class('active') : _elm_lang$html$Html_Attributes$class('');
+	});
+var _elm_lang$elm_architecture_tutorial$App_View$page = function (model) {
+	var _p0 = model.route;
+	switch (_p0.ctor) {
+		case 'Heroes':
+			return _elm_lang$elm_architecture_tutorial$Heroes_View$root(model);
+		case 'Dashboard':
+			return _elm_lang$elm_architecture_tutorial$Dashboard_View$root(model);
+		case 'HeroDetails':
+			var _p1 = model.heroDetailModel.selectedHero;
+			if (_p1.ctor === 'Just') {
+				return A2(
+					_elm_lang$html$Html_App$map,
+					_elm_lang$elm_architecture_tutorial$App_Types$HeroDetail,
+					_elm_lang$elm_architecture_tutorial$HeroDetail_View$root(
+						_elm_lang$core$Maybe$Just(_p1._0)));
+			} else {
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('Loading...')
+						]));
+			}
+		default:
+			return A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+	}
+};
+var _elm_lang$elm_architecture_tutorial$App_View$root = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h1,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(model.title)
+					])),
+				A2(
+				_elm_lang$html$Html$nav,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$a,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$href('#dashboard'),
+								A2(_elm_lang$elm_architecture_tutorial$App_View$addActiveClass, _elm_lang$elm_architecture_tutorial$App_Types$Dashboard, model.route)
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Dashboard')
+							])),
+						A2(
+						_elm_lang$html$Html$a,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$href('#heroes'),
+								A2(_elm_lang$elm_architecture_tutorial$App_View$addActiveClass, _elm_lang$elm_architecture_tutorial$App_Types$Heroes, model.route)
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Heroes')
+							]))
+					])),
+				_elm_lang$elm_architecture_tutorial$App_View$page(model)
+			]));
+};
+
+var _elm_lang$elm_architecture_tutorial$App_State$urlUpdate = F2(
 	function (result, model) {
 		var currentRoute = _elm_lang$elm_architecture_tutorial$Routing$routeFromResult(result);
-		var _p3 = currentRoute;
-		switch (_p3.ctor) {
+		var _p0 = currentRoute;
+		switch (_p0.ctor) {
 			case 'HeroDetails':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -10026,7 +10256,7 @@ var _elm_lang$elm_architecture_tutorial$App$urlUpdate = F2(
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								'http://localhost:3000/heroes/',
-								_elm_lang$core$Basics$toString(_p3._0)))
+								_elm_lang$core$Basics$toString(_p0._0)))
 						]));
 			case 'Dashboard':
 				return A2(
@@ -10053,242 +10283,19 @@ var _elm_lang$elm_architecture_tutorial$App$urlUpdate = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{route: _p3, searchBox: _elm_lang$core$Maybe$Nothing}),
+						{route: _p0, searchBox: _elm_lang$core$Maybe$Nothing}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 		}
 	});
-var _elm_lang$elm_architecture_tutorial$App$subscriptions = function (model) {
-	return _elm_lang$core$Platform_Sub$none;
-};
-var _elm_lang$elm_architecture_tutorial$App$addSelectedClass = function (bool) {
-	return bool ? _elm_lang$html$Html_Attributes$class('selected') : _elm_lang$html$Html_Attributes$class('');
-};
-var _elm_lang$elm_architecture_tutorial$App$addActiveClass = F2(
-	function (route, c) {
-		return _elm_lang$core$Native_Utils.eq(route, c) ? _elm_lang$html$Html_Attributes$class('active') : _elm_lang$html$Html_Attributes$class('');
-	});
-var _elm_lang$elm_architecture_tutorial$App$showHero = F2(
-	function (hero2, hero) {
-		return A2(
-			_elm_lang$html$Html$li,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Events$onClick(
-					_elm_lang$elm_architecture_tutorial$App_Types$SelectHero(hero)),
-					_elm_lang$elm_architecture_tutorial$App$addSelectedClass(
-					_elm_lang$core$Native_Utils.eq(hero, hero2))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('badge')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							_elm_lang$core$Basics$toString(hero.id))
-						])),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$Basics_ops['++'], ' ', hero.name))
-						])),
-					A2(
-					_elm_lang$html$Html$button,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('delete'),
-							_elm_lang$elm_architecture_tutorial$App$otherClick(
-							_elm_lang$elm_architecture_tutorial$App_Types$DeleteHero(hero))
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('x')
-						]))
-				]));
-	});
-var _elm_lang$elm_architecture_tutorial$App$page = function (model) {
-	var _p4 = model.route;
-	switch (_p4.ctor) {
-		case 'Heroes':
-			return A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$h2,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('My Heroes')
-							])),
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$label,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('Hero name:')
-									])),
-								A2(
-								_elm_lang$html$Html$input,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$type$('text'),
-										_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$App_Types$UpdateNewHeroName),
-										_elm_lang$html$Html_Attributes$value(
-										A2(_elm_lang$core$Maybe$withDefault, '', model.newHeroName))
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[])),
-								A2(
-								_elm_lang$html$Html$button,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Events$onClick(_elm_lang$elm_architecture_tutorial$App_Types$SaveHero)
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('Add')
-									]))
-							])),
-						A2(
-						_elm_lang$html$Html$ul,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('heroes')
-							]),
-						A2(
-							_elm_lang$core$List$map,
-							_elm_lang$elm_architecture_tutorial$App$showHero(
-								A2(
-									_elm_lang$core$Maybe$withDefault,
-									A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, ''),
-									model.heroDetailModel.selectedHero)),
-							model.heroesList)),
-						_elm_lang$elm_architecture_tutorial$App$miniDetail(model.heroDetailModel.selectedHero)
-					]));
-		case 'Dashboard':
-			return A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$h3,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Top Heroes')
-							])),
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$elm_architecture_tutorial$App$dashboardView(model.heroesList)),
-						_elm_lang$elm_architecture_tutorial$App$heroSearch(model)
-					]));
-		case 'HeroDetails':
-			var _p5 = model.heroDetailModel.selectedHero;
-			if (_p5.ctor === 'Just') {
-				return A2(
-					_elm_lang$html$Html_App$map,
-					_elm_lang$elm_architecture_tutorial$App_Types$HeroDetail,
-					_elm_lang$elm_architecture_tutorial$HeroDetail_View$root(
-						_elm_lang$core$Maybe$Just(_p5._0)));
-			} else {
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Loading...')
-						]));
-			}
-		default:
-			return A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[]));
-	}
-};
-var _elm_lang$elm_architecture_tutorial$App$view = function (model) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$h1,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text(model.title)
-					])),
-				A2(
-				_elm_lang$html$Html$nav,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$a,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$href('#dashboard'),
-								A2(_elm_lang$elm_architecture_tutorial$App$addActiveClass, _elm_lang$elm_architecture_tutorial$Routing$Dashboard, model.route)
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Dashboard')
-							])),
-						A2(
-						_elm_lang$html$Html$a,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$href('#heroes'),
-								A2(_elm_lang$elm_architecture_tutorial$App$addActiveClass, _elm_lang$elm_architecture_tutorial$Routing$Heroes, model.route)
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Heroes')
-							]))
-					])),
-				_elm_lang$elm_architecture_tutorial$App$page(model)
-			]));
-};
-var _elm_lang$elm_architecture_tutorial$App$update = F2(
+var _elm_lang$elm_architecture_tutorial$App_State$update = F2(
 	function (msg, model) {
-		var _p6 = msg;
-		switch (_p6.ctor) {
+		var _p1 = msg;
+		switch (_p1.ctor) {
 			case 'HeroDetail':
-				var _p7 = A2(_elm_lang$elm_architecture_tutorial$HeroDetail_State$update, _p6._0, model.heroDetailModel);
-				var newModel = _p7._0;
-				var newCmd = _p7._1;
+				var _p2 = A2(_elm_lang$elm_architecture_tutorial$HeroDetail_State$update, _p1._0, model.heroDetailModel);
+				var newModel = _p2._0;
+				var newCmd = _p2._1;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -10304,7 +10311,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							newHeroName: _elm_lang$core$Maybe$Just(_p6._0)
+							newHeroName: _elm_lang$core$Maybe$Just(_p1._0)
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
@@ -10318,7 +10325,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 							heroDetailModel: _elm_lang$core$Native_Utils.update(
 								heroDetailModel,
 								{
-									selectedHero: _elm_lang$core$Maybe$Just(_p6._0)
+									selectedHero: _elm_lang$core$Maybe$Just(_p1._0)
 								})
 						}),
 					_elm_lang$core$Native_List.fromArray(
@@ -10338,14 +10345,14 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								'#heroes/',
-								_elm_lang$core$Basics$toString(_p6._0.id)))
+								_elm_lang$core$Basics$toString(_p1._0.id)))
 						]));
 			case 'FetchSucceed':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{heroesList: _p6._0}),
+						{heroesList: _p1._0}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'FetchFail':
@@ -10369,7 +10376,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 							heroDetailModel: _elm_lang$core$Native_Utils.update(
 								heroDetailModel,
 								{
-									selectedHero: _elm_lang$core$Maybe$Just(_p6._0)
+									selectedHero: _elm_lang$core$Maybe$Just(_p1._0)
 								})
 						}),
 					_elm_lang$core$Native_List.fromArray(
@@ -10390,7 +10397,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								'http://localhost:3000/heroes/',
-								_elm_lang$core$Basics$toString(_p6._0.id)))
+								_elm_lang$core$Basics$toString(_p1._0.id)))
 						]));
 			case 'DeleteHeroSucceed':
 				return A2(
@@ -10415,8 +10422,8 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'SaveHero':
-				var _p8 = model.newHeroName;
-				if (_p8.ctor === 'Just') {
+				var _p3 = model.newHeroName;
+				if (_p3.ctor === 'Just') {
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
@@ -10426,7 +10433,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 							[
 								A2(
 								_elm_lang$elm_architecture_tutorial$App_Rest$saveHero,
-								A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, _p8._0),
+								A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, _p3._0),
 								'http://localhost:3000/heroes')
 							]));
 				} else {
@@ -10442,7 +10449,7 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Basics_ops['++'],
 					model.heroesList,
 					_elm_lang$core$Native_List.fromArray(
-						[_p6._0]));
+						[_p1._0]));
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -10460,8 +10467,8 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			default:
-				var _p9 = _p6._0;
-				return _elm_lang$core$Native_Utils.eq(_p9, '') ? A2(
+				var _p4 = _p1._0;
+				return _elm_lang$core$Native_Utils.eq(_p4, '') ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
@@ -10472,12 +10479,16 @@ var _elm_lang$elm_architecture_tutorial$App$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							searchBox: _elm_lang$core$Maybe$Just(_p9)
+							searchBox: _elm_lang$core$Maybe$Just(_p4)
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 		}
 	});
+
+var _elm_lang$elm_architecture_tutorial$App$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$none;
+};
 var _elm_lang$elm_architecture_tutorial$App$initApp = function (route) {
 	return {
 		title: 'Tour of Heroes',
@@ -10502,7 +10513,7 @@ var _elm_lang$elm_architecture_tutorial$App$main = {
 	main: A2(
 		_elm_lang$navigation$Navigation$program,
 		_elm_lang$elm_architecture_tutorial$Routing$parser,
-		{init: _elm_lang$elm_architecture_tutorial$App$init, view: _elm_lang$elm_architecture_tutorial$App$view, update: _elm_lang$elm_architecture_tutorial$App$update, subscriptions: _elm_lang$elm_architecture_tutorial$App$subscriptions, urlUpdate: _elm_lang$elm_architecture_tutorial$App$urlUpdate})
+		{init: _elm_lang$elm_architecture_tutorial$App$init, view: _elm_lang$elm_architecture_tutorial$App_View$root, update: _elm_lang$elm_architecture_tutorial$App_State$update, subscriptions: _elm_lang$elm_architecture_tutorial$App$subscriptions, urlUpdate: _elm_lang$elm_architecture_tutorial$App_State$urlUpdate})
 };
 
 var Elm = {};

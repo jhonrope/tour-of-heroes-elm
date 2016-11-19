@@ -2,7 +2,7 @@
   "heroes": [
     {
       "id": 15,
-      "name": "Piromatics the Power!"
+      "name": "Piromatics"
     },
     {
       "id": 16,
@@ -11,6 +11,18 @@
     {
       "id": 19,
       "name": "Magma"
+    },
+    {
+      "id": 20,
+      "name": "pato"
+    },
+    {
+      "id": 21,
+      "name": "batman"
+    },
+    {
+      "id": 22,
+      "name": "superman"
     }
   ]
 }
