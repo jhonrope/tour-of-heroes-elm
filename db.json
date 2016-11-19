@@ -1,8 +1,36 @@
 {
   "heroes": [
     {
+      "id": 11,
+      "name": "Mr. Nice"
+    },
+    {
+      "id": 12,
+      "name": "Narco"
+    },
+    {
+      "id": 13,
+      "name": "Bombasto"
+    },
+    {
+      "id": 14,
+      "name": "Celeritas"
+    },
+    {
+      "id": 15,
+      "name": "Magneta"
+    },
+    {
       "id": 16,
-      "name": "RubberMan12"
+      "name": "RubberMan"
+    },
+    {
+      "id": 17,
+      "name": "Dynama"
+    },
+    {
+      "id": 18,
+      "name": "Dr IQ"
     },
     {
       "id": 19,
@@ -10,23 +38,7 @@
     },
     {
       "id": 20,
-      "name": "pato"
-    },
-    {
-      "id": 21,
-      "name": "batman"
-    },
-    {
-      "id": 22,
-      "name": "superman adios"
-    },
-    {
-      "id": 24,
-      "name": "asdfwerq"
-    },
-    {
-      "id": 25,
-      "name": "nuevo heroe"
+      "name": "Tornado"
     }
   ]
 }

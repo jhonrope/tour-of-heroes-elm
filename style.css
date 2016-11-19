@@ -96,9 +96,7 @@ a {
 h3 {
   text-align: center; margin-bottom: 0;
 }
-h4 {
-  position: relative;
-}
+
 .grid {
   margin: 0;
 }
@@ -141,6 +139,9 @@ h4 {
 
 
 /*Search*/
+.search-result:hover{
+  background-color: lightgray
+}
 
 .search-result{
   border-bottom: 1px solid gray;
@@ -177,7 +178,7 @@ h4 {
   background-color: #EEE;
   margin: .5em;
   padding: .3em 0;
-  height: 1.6em;
+  height: 2em;
   border-radius: 4px;
 }
 .heroes li:hover {
@@ -203,7 +204,7 @@ h4 {
   position: relative;
   left: -1px;
   top: -4px;
-  height: 1.8em;
+  height: 2em;
   margin-right: .8em;
   border-radius: 4px 0 0 4px;
 }
@@ -215,6 +216,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   cursor: hand;
+  margin-left: 5px;
 }
 button:hover {
   background-color: #cfd8dc;
@@ -274,6 +276,7 @@ nav a {
   padding: 5px 10px;
   text-decoration: none;
   margin-top: 10px;
+  margin-left: 5px;
   display: inline-block;
   background-color: #eee;
   border-radius: 4px;
