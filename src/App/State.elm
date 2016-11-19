@@ -64,3 +64,31 @@ urlUpdate result model =
 
             other ->
                 { model | route = other } ! []
+
+
+subscriptions : AppModel -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+initApp : Route -> AppModel
+initApp route =
+    { title = "Tour of Heroes"
+    , heroesList = []
+    , route = route
+    , heroDetailModel = fst HeroDetail.State.init
+    , heroesListModel = fst HeroesList.State.init
+    , dashboardModel = fst Dashboard.State.init
+    }
+
+
+init : Result String Route -> ( AppModel, Cmd Msg )
+init result =
+    let
+        currentRoute =
+            Routing.routeFromResult result
+
+        url =
+            "http://localhost:3000/heroes"
+    in
+        ( initApp currentRoute, newUrl "#dashboard" )

@@ -11,11 +11,15 @@ import Dashboard.Types exposing (..)
 
 root : Model -> Html Msg
 root model =
-    div []
-        [ h3 [] [ text "Top Heroes" ]
-        , dashboardView model.heroesList
-        , HeroSearch.root model.heroSearchModel |> Html.App.map HeroSearch
-        ]
+    let
+        heroesList =
+            model.heroesList
+    in
+        div []
+            [ h3 [] [ text "Top Heroes" ]
+            , dashboardView model.heroesList
+            , HeroSearch.root model.heroSearchModel |> Html.App.map HeroSearch
+            ]
 
 
 heroDashboard : Hero -> Html Msg

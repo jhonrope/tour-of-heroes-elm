@@ -11,7 +11,7 @@ init =
     let
         model =
             { heroesList = []
-            , heroSearchModel = fst HeroSearch.State.init
+            , heroSearchModel = fst <| HeroSearch.State.init []
             }
     in
         model ! []
@@ -21,14 +21,17 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ViewDetails hero ->
-            { model | heroSearchModel = fst HeroSearch.State.init } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
+            { model | heroSearchModel = fst <| HeroSearch.State.init model.heroesList } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
 
         HeroSearch heroSearch ->
             let
                 ( newModel, newCmd ) =
                     HeroSearch.State.update heroSearch model.heroSearchModel
+
+                otroNewModel =
+                    { newModel | heroesList = model.heroesList }
             in
-                { model | heroSearchModel = newModel } ! [ Cmd.map HeroSearch newCmd ]
+                { model | heroSearchModel = otroNewModel } ! [ Cmd.map HeroSearch newCmd ]
 
         FetchSucceed list ->
             { model | heroesList = list } ! []

@@ -2,13 +2,14 @@ module HeroSearch.State exposing (..)
 
 import HeroSearch.Types exposing (..)
 import Navigation exposing (..)
+import Hero.Types exposing (..)
 
 
-init : ( Model, Cmd Msg )
-init =
+init : List Hero -> ( Model, Cmd Msg )
+init list =
     let
         model =
-            { heroesList = []
+            { heroesList = list
             , searchBox = Nothing
             }
     in
