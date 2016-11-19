@@ -4,11 +4,11 @@ import Html exposing (Html, div, h4, text, input)
 import Html.Attributes exposing (id, class)
 import Html.Events exposing (onInput, onClick)
 import String exposing (toLower)
-import App.Types exposing (..)
 import Hero.Types exposing (..)
+import HeroSearch.Types exposing (..)
 
 
-root : AppModel -> Html Msg
+root : Model -> Html Msg
 root model =
     let
         heroesList =

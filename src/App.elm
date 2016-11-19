@@ -8,6 +8,8 @@ import String exposing (..)
 import HeroDetail.State exposing (..)
 import App.View exposing (..)
 import App.State exposing (..)
+import HeroesList.State exposing (..)
+import Dashboard.State exposing (..)
 
 
 initApp : Route -> AppModel
@@ -15,9 +17,9 @@ initApp route =
     { title = "Tour of Heroes"
     , heroesList = []
     , route = route
-    , searchBox = Nothing
     , heroDetailModel = fst HeroDetail.State.init
-    , newHeroName = Nothing
+    , heroesListModel = fst HeroesList.State.init
+    , dashboardModel = fst Dashboard.State.init
     }
 
 

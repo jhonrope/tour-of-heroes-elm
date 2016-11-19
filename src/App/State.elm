@@ -4,8 +4,9 @@ import App.Types exposing (..)
 import HeroDetail.State exposing (..)
 import Navigation exposing (..)
 import App.Rest exposing (..)
-import Hero.Types exposing (..)
 import Routing exposing (..)
+import HeroesList.State exposing (..)
+import Dashboard.State exposing (..)
 
 
 update : Msg -> AppModel -> ( AppModel, Cmd Msg )
@@ -18,18 +19,19 @@ update msg model =
             in
                 { model | heroDetailModel = newModel } ! [ Cmd.map HeroDetail newCmd ]
 
-        UpdateNewHeroName newName ->
-            { model | newHeroName = Just newName } ! []
-
-        SelectHero hero ->
+        HeroesList heroesList ->
             let
-                heroDetailModel =
-                    model.heroDetailModel
+                ( newModel, newCmd ) =
+                    HeroesList.State.update heroesList model.heroesListModel
             in
-                { model | heroDetailModel = { heroDetailModel | selectedHero = Just hero } } ! []
+                { model | heroesListModel = newModel } ! [ Cmd.map HeroesList newCmd ]
 
-        ViewDetails hero ->
-            { model | heroDetailModel = fst HeroDetail.State.init, searchBox = Nothing } ! [ newUrl <| "#heroes/" ++ toString hero.id ]
+        DashboardT dashboard ->
+            let
+                ( newModel, newCmd ) =
+                    Dashboard.State.update dashboard model.dashboardModel
+            in
+                { model | dashboardModel = newModel } ! [ Cmd.map DashboardT newCmd ]
 
         FetchSucceed list ->
             { model | heroesList = list } ! []
@@ -47,42 +49,6 @@ update msg model =
         FetchHeroFail message ->
             model ! []
 
-        DeleteHero hero ->
-            model ! [ deleteHero <| "http://localhost:3000/heroes/" ++ toString hero.id ]
-
-        DeleteHeroSucceed hero ->
-            { model | heroDetailModel = fst HeroDetail.State.init } ! [ newUrl "#heroes" ]
-
-        DeleteHeroFail message ->
-            { model | heroDetailModel = fst HeroDetail.State.init } ! []
-
-        SaveHero ->
-            case model.newHeroName of
-                Just newName ->
-                    { model | newHeroName = Nothing } ! [ saveHero (Hero 0 newName) "http://localhost:3000/heroes" ]
-
-                Nothing ->
-                    model ! []
-
-        SaveHeroSucceed hero ->
-            let
-                newList =
-                    model.heroesList ++ [ hero ]
-
-                heroDetailModel =
-                    model.heroDetailModel
-            in
-                { model | heroesList = newList, heroDetailModel = fst HeroDetail.State.init } ! []
-
-        SaveHeroFail message ->
-            model ! []
-
-        UpdateSearchBox string ->
-            if string == "" then
-                { model | searchBox = Nothing } ! []
-            else
-                { model | searchBox = Just string } ! []
-
 
 urlUpdate : Result String Route -> AppModel -> ( AppModel, Cmd Msg )
 urlUpdate result model =
@@ -95,10 +61,10 @@ urlUpdate result model =
                 { model | route = currentRoute } ! [ fetchHero ("http://localhost:3000/heroes/" ++ (toString id)) ]
 
             Dashboard ->
-                { model | route = currentRoute, searchBox = Nothing } ! [ fetchHeroes "http://localhost:3000/heroes" ]
+                { model | route = currentRoute } ! [ fetchHeroes "http://localhost:3000/heroes" ]
 
             Heroes ->
-                { model | route = currentRoute, searchBox = Nothing } ! [ fetchHeroes "http://localhost:3000/heroes" ]
+                { model | route = currentRoute } ! [ fetchHeroes "http://localhost:3000/heroes" ]
 
             other ->
-                { model | route = other, searchBox = Nothing } ! []
+                { model | route = other } ! []

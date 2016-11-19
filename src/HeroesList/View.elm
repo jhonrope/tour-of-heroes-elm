@@ -1,15 +1,15 @@
-module Heroes.View exposing (root)
+module HeroesList.View exposing (root)
 
 import Html exposing (Html, div, h2, label, text, input, button, ul, li, span, Attribute)
 import Html.Attributes exposing (type', value, class)
 import Html.Events exposing (onInput, onClick, Options, onWithOptions)
 import String exposing (toUpper)
-import App.Types exposing (..)
 import Hero.Types exposing (..)
 import Json.Decode as Json
+import HeroesList.Types exposing (..)
 
 
-root : AppModel -> Html Msg
+root : Model -> Html Msg
 root model =
     div []
         [ h2 [] [ text "My Heroes" ]
@@ -20,8 +20,8 @@ root model =
             ]
         , ul [ class "heroes" ]
             -- Fix
-            (List.map (showHero (Maybe.withDefault (Hero 0 "") model.heroDetailModel.selectedHero)) model.heroesList)
-        , miniDetail model.heroDetailModel.selectedHero
+            (List.map (showHero (Maybe.withDefault (Hero 0 "") model.selectedHero)) model.heroesList)
+        , miniDetail model.selectedHero
         ]
 
 

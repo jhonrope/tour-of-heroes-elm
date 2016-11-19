@@ -1,19 +1,20 @@
 module Dashboard.View exposing (..)
 
 import Html exposing (Html, div, h3, h4, text)
+import Html.App exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import App.Types exposing (..)
 import HeroSearch.View as HeroSearch exposing (..)
 import Hero.Types exposing (..)
+import Dashboard.Types exposing (..)
 
 
-root : AppModel -> Html Msg
+root : Model -> Html Msg
 root model =
     div []
         [ h3 [] [ text "Top Heroes" ]
         , dashboardView model.heroesList
-        , HeroSearch.root model
+        , HeroSearch.root model.heroSearchModel |> Html.App.map HeroSearch
         ]
 
 

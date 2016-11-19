@@ -3,34 +3,28 @@ module App.Types exposing (..)
 import Http exposing (..)
 import HeroDetail.Types exposing (..)
 import Hero.Types exposing (..)
+import HeroesList.Types exposing (..)
+import Dashboard.Types exposing (..)
 
 
 type alias AppModel =
     { title : String
-    , heroesList : List Hero
     , route : Route
-    , searchBox : Maybe String
+    , heroesListModel : HeroesList.Types.Model
     , heroDetailModel : HeroDetail.Types.Model
-    , newHeroName : Maybe String
+    , dashboardModel : Dashboard.Types.Model
+    , heroesList : List Hero
     }
 
 
 type Msg
     = HeroDetail HeroDetail.Types.Msg
-    | SelectHero Hero
-    | ViewDetails Hero
+    | HeroesList HeroesList.Types.Msg
+    | DashboardT Dashboard.Types.Msg
     | FetchSucceed (List Hero)
     | FetchFail Http.Error
     | FetchHeroSucceed Hero
     | FetchHeroFail Http.Error
-    | DeleteHero Hero
-    | DeleteHeroSucceed Hero
-    | DeleteHeroFail Http.Error
-    | UpdateNewHeroName String
-    | SaveHero
-    | SaveHeroSucceed Hero
-    | SaveHeroFail Http.Error
-    | UpdateSearchBox String
 
 
 type Route

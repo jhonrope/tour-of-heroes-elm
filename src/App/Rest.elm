@@ -38,14 +38,7 @@ fetchHero url =
     Task.perform FetchFail FetchHeroSucceed (Http.get decodeHero url)
 
 
-saveHero : Hero -> String -> Cmd Msg
-saveHero hero url =
-    Task.perform SaveHeroFail SaveHeroSucceed (post url hero)
 
-
-deleteHero : String -> Cmd Msg
-deleteHero url =
-    Task.perform DeleteHeroFail DeleteHeroSucceed (delete url)
 
 
 decodeListHero : Json.Decoder (List Hero)
