@@ -30,8 +30,8 @@ miniDetail maybeHero =
     case maybeHero of
         Just hero ->
             div []
-                [ h2 [] [ text <| (String.toUpper hero.name) ++ " is my hero" ]
-                , button [ onClick (ViewDetails hero) ] [ text "View Details" ]
+                [ h2 [] [ text <| String.toUpper hero.name ++ " is my hero" ]
+                , button [ onClick <| ViewDetails hero ] [ text "View Details" ]
                 ]
 
         Nothing ->

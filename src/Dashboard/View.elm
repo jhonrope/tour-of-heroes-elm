@@ -12,7 +12,7 @@ root : AppModel -> Html Msg
 root model =
     div []
         [ h3 [] [ text "Top Heroes" ]
-        , div [] (dashboardView model.heroesList)
+        , dashboardView model.heroesList
         , HeroSearch.root model
         ]
 
@@ -25,9 +25,11 @@ heroDashboard hero =
         ]
 
 
-dashboardView : List Hero -> List (Html Msg)
+dashboardView : List Hero -> Html Msg
 dashboardView list =
-    list
-        |> List.drop 1
-        |> List.take 4
-        |> List.map heroDashboard
+    div []
+        (list
+            |> List.drop 1
+            |> List.take 4
+            |> List.map heroDashboard
+        )
