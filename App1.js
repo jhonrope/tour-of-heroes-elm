@@ -6448,6 +6448,584 @@ return {
 var _elm_lang$dom$Dom_LowLevel$onWindow = _elm_lang$dom$Native_Dom.onWindow;
 var _elm_lang$dom$Dom_LowLevel$onDocument = _elm_lang$dom$Native_Dom.onDocument;
 
+//import Dict, List, Maybe, Native.Scheduler //
+
+var _evancz$elm_http$Native_Http = function() {
+
+function send(settings, request)
+{
+	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+		var req = new XMLHttpRequest();
+
+		// start
+		if (settings.onStart.ctor === 'Just')
+		{
+			req.addEventListener('loadStart', function() {
+				var task = settings.onStart._0;
+				_elm_lang$core$Native_Scheduler.rawSpawn(task);
+			});
+		}
+
+		// progress
+		if (settings.onProgress.ctor === 'Just')
+		{
+			req.addEventListener('progress', function(event) {
+				var progress = !event.lengthComputable
+					? _elm_lang$core$Maybe$Nothing
+					: _elm_lang$core$Maybe$Just({
+						loaded: event.loaded,
+						total: event.total
+					});
+				var task = settings.onProgress._0(progress);
+				_elm_lang$core$Native_Scheduler.rawSpawn(task);
+			});
+		}
+
+		// end
+		req.addEventListener('error', function() {
+			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawNetworkError' }));
+		});
+
+		req.addEventListener('timeout', function() {
+			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawTimeout' }));
+		});
+
+		req.addEventListener('load', function() {
+			return callback(_elm_lang$core$Native_Scheduler.succeed(toResponse(req)));
+		});
+
+		req.open(request.verb, request.url, true);
+
+		// set all the headers
+		function setHeader(pair) {
+			req.setRequestHeader(pair._0, pair._1);
+		}
+		A2(_elm_lang$core$List$map, setHeader, request.headers);
+
+		// set the timeout
+		req.timeout = settings.timeout;
+
+		// enable this withCredentials thing
+		req.withCredentials = settings.withCredentials;
+
+		// ask for a specific MIME type for the response
+		if (settings.desiredResponseType.ctor === 'Just')
+		{
+			req.overrideMimeType(settings.desiredResponseType._0);
+		}
+
+		// actuall send the request
+		if(request.body.ctor === "BodyFormData")
+		{
+			req.send(request.body.formData)
+		}
+		else
+		{
+			req.send(request.body._0);
+		}
+
+		return function() {
+			req.abort();
+		};
+	});
+}
+
+
+// deal with responses
+
+function toResponse(req)
+{
+	var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
+	var response = tag === 'Blob' ? req.response : req.responseText;
+	return {
+		status: req.status,
+		statusText: req.statusText,
+		headers: parseHeaders(req.getAllResponseHeaders()),
+		url: req.responseURL,
+		value: { ctor: tag, _0: response }
+	};
+}
+
+
+function parseHeaders(rawHeaders)
+{
+	var headers = _elm_lang$core$Dict$empty;
+
+	if (!rawHeaders)
+	{
+		return headers;
+	}
+
+	var headerPairs = rawHeaders.split('\u000d\u000a');
+	for (var i = headerPairs.length; i--; )
+	{
+		var headerPair = headerPairs[i];
+		var index = headerPair.indexOf('\u003a\u0020');
+		if (index > 0)
+		{
+			var key = headerPair.substring(0, index);
+			var value = headerPair.substring(index + 2);
+
+			headers = A3(_elm_lang$core$Dict$update, key, function(oldValue) {
+				if (oldValue.ctor === 'Just')
+				{
+					return _elm_lang$core$Maybe$Just(value + ', ' + oldValue._0);
+				}
+				return _elm_lang$core$Maybe$Just(value);
+			}, headers);
+		}
+	}
+
+	return headers;
+}
+
+
+function multipart(dataList)
+{
+	var formData = new FormData();
+
+	while (dataList.ctor !== '[]')
+	{
+		var data = dataList._0;
+		if (data.ctor === 'StringData')
+		{
+			formData.append(data._0, data._1);
+		}
+		else
+		{
+			var fileName = data._1.ctor === 'Nothing'
+				? undefined
+				: data._1._0;
+			formData.append(data._0, data._2, fileName);
+		}
+		dataList = dataList._1;
+	}
+
+	return { ctor: 'BodyFormData', formData: formData };
+}
+
+
+function uriEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function uriDecode(string)
+{
+	return decodeURIComponent(string);
+}
+
+return {
+	send: F2(send),
+	multipart: multipart,
+	uriEncode: uriEncode,
+	uriDecode: uriDecode
+};
+
+}();
+
+var _evancz$elm_http$Http$send = _evancz$elm_http$Native_Http.send;
+var _evancz$elm_http$Http$defaultSettings = {timeout: 0, onStart: _elm_lang$core$Maybe$Nothing, onProgress: _elm_lang$core$Maybe$Nothing, desiredResponseType: _elm_lang$core$Maybe$Nothing, withCredentials: false};
+var _evancz$elm_http$Http$multipart = _evancz$elm_http$Native_Http.multipart;
+var _evancz$elm_http$Http$uriDecode = _evancz$elm_http$Native_Http.uriDecode;
+var _evancz$elm_http$Http$uriEncode = _evancz$elm_http$Native_Http.uriEncode;
+var _evancz$elm_http$Http$queryEscape = function (string) {
+	return A2(
+		_elm_lang$core$String$join,
+		'+',
+		A2(
+			_elm_lang$core$String$split,
+			'%20',
+			_evancz$elm_http$Http$uriEncode(string)));
+};
+var _evancz$elm_http$Http$queryPair = function (_p0) {
+	var _p1 = _p0;
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_evancz$elm_http$Http$queryEscape(_p1._0),
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'=',
+			_evancz$elm_http$Http$queryEscape(_p1._1)));
+};
+var _evancz$elm_http$Http$url = F2(
+	function (baseUrl, args) {
+		var _p2 = args;
+		if (_p2.ctor === '[]') {
+			return baseUrl;
+		} else {
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				baseUrl,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'?',
+					A2(
+						_elm_lang$core$String$join,
+						'&',
+						A2(_elm_lang$core$List$map, _evancz$elm_http$Http$queryPair, args))));
+		}
+	});
+var _evancz$elm_http$Http$Request = F4(
+	function (a, b, c, d) {
+		return {verb: a, headers: b, url: c, body: d};
+	});
+var _evancz$elm_http$Http$Settings = F5(
+	function (a, b, c, d, e) {
+		return {timeout: a, onStart: b, onProgress: c, desiredResponseType: d, withCredentials: e};
+	});
+var _evancz$elm_http$Http$Response = F5(
+	function (a, b, c, d, e) {
+		return {status: a, statusText: b, headers: c, url: d, value: e};
+	});
+var _evancz$elm_http$Http$TODO_implement_blob_in_another_library = {ctor: 'TODO_implement_blob_in_another_library'};
+var _evancz$elm_http$Http$TODO_implement_file_in_another_library = {ctor: 'TODO_implement_file_in_another_library'};
+var _evancz$elm_http$Http$BodyBlob = function (a) {
+	return {ctor: 'BodyBlob', _0: a};
+};
+var _evancz$elm_http$Http$BodyFormData = {ctor: 'BodyFormData'};
+var _evancz$elm_http$Http$ArrayBuffer = {ctor: 'ArrayBuffer'};
+var _evancz$elm_http$Http$BodyString = function (a) {
+	return {ctor: 'BodyString', _0: a};
+};
+var _evancz$elm_http$Http$string = _evancz$elm_http$Http$BodyString;
+var _evancz$elm_http$Http$Empty = {ctor: 'Empty'};
+var _evancz$elm_http$Http$empty = _evancz$elm_http$Http$Empty;
+var _evancz$elm_http$Http$FileData = F3(
+	function (a, b, c) {
+		return {ctor: 'FileData', _0: a, _1: b, _2: c};
+	});
+var _evancz$elm_http$Http$BlobData = F3(
+	function (a, b, c) {
+		return {ctor: 'BlobData', _0: a, _1: b, _2: c};
+	});
+var _evancz$elm_http$Http$blobData = _evancz$elm_http$Http$BlobData;
+var _evancz$elm_http$Http$StringData = F2(
+	function (a, b) {
+		return {ctor: 'StringData', _0: a, _1: b};
+	});
+var _evancz$elm_http$Http$stringData = _evancz$elm_http$Http$StringData;
+var _evancz$elm_http$Http$Blob = function (a) {
+	return {ctor: 'Blob', _0: a};
+};
+var _evancz$elm_http$Http$Text = function (a) {
+	return {ctor: 'Text', _0: a};
+};
+var _evancz$elm_http$Http$RawNetworkError = {ctor: 'RawNetworkError'};
+var _evancz$elm_http$Http$RawTimeout = {ctor: 'RawTimeout'};
+var _evancz$elm_http$Http$BadResponse = F2(
+	function (a, b) {
+		return {ctor: 'BadResponse', _0: a, _1: b};
+	});
+var _evancz$elm_http$Http$UnexpectedPayload = function (a) {
+	return {ctor: 'UnexpectedPayload', _0: a};
+};
+var _evancz$elm_http$Http$handleResponse = F2(
+	function (handle, response) {
+		if ((_elm_lang$core$Native_Utils.cmp(200, response.status) < 1) && (_elm_lang$core$Native_Utils.cmp(response.status, 300) < 0)) {
+			var _p3 = response.value;
+			if (_p3.ctor === 'Text') {
+				return handle(_p3._0);
+			} else {
+				return _elm_lang$core$Task$fail(
+					_evancz$elm_http$Http$UnexpectedPayload('Response body is a blob, expecting a string.'));
+			}
+		} else {
+			return _elm_lang$core$Task$fail(
+				A2(_evancz$elm_http$Http$BadResponse, response.status, response.statusText));
+		}
+	});
+var _evancz$elm_http$Http$NetworkError = {ctor: 'NetworkError'};
+var _evancz$elm_http$Http$Timeout = {ctor: 'Timeout'};
+var _evancz$elm_http$Http$promoteError = function (rawError) {
+	var _p4 = rawError;
+	if (_p4.ctor === 'RawTimeout') {
+		return _evancz$elm_http$Http$Timeout;
+	} else {
+		return _evancz$elm_http$Http$NetworkError;
+	}
+};
+var _evancz$elm_http$Http$getString = function (url) {
+	var request = {
+		verb: 'GET',
+		headers: _elm_lang$core$Native_List.fromArray(
+			[]),
+		url: url,
+		body: _evancz$elm_http$Http$empty
+	};
+	return A2(
+		_elm_lang$core$Task$andThen,
+		A2(
+			_elm_lang$core$Task$mapError,
+			_evancz$elm_http$Http$promoteError,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request)),
+		_evancz$elm_http$Http$handleResponse(_elm_lang$core$Task$succeed));
+};
+var _evancz$elm_http$Http$fromJson = F2(
+	function (decoder, response) {
+		var decode = function (str) {
+			var _p5 = A2(_elm_lang$core$Json_Decode$decodeString, decoder, str);
+			if (_p5.ctor === 'Ok') {
+				return _elm_lang$core$Task$succeed(_p5._0);
+			} else {
+				return _elm_lang$core$Task$fail(
+					_evancz$elm_http$Http$UnexpectedPayload(_p5._0));
+			}
+		};
+		return A2(
+			_elm_lang$core$Task$andThen,
+			A2(_elm_lang$core$Task$mapError, _evancz$elm_http$Http$promoteError, response),
+			_evancz$elm_http$Http$handleResponse(decode));
+	});
+var _evancz$elm_http$Http$get = F2(
+	function (decoder, url) {
+		var request = {
+			verb: 'GET',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[]),
+			url: url,
+			body: _evancz$elm_http$Http$empty
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+var _evancz$elm_http$Http$post = F3(
+	function (decoder, url, body) {
+		var request = {
+			verb: 'POST',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			decoder,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
+	});
+
+var _elm_lang$elm_architecture_tutorial$Hero_Types$Hero = F2(
+	function (a, b) {
+		return {id: a, name: b};
+	});
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$Model = F2(
+	function (a, b) {
+		return {heroName: a, selectedHero: b};
+	});
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail = function (a) {
+	return {ctor: 'UpdateHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed = function (a) {
+	return {ctor: 'UpdateHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHero = function (a) {
+	return {ctor: 'UpdateHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$GoBack = {ctor: 'GoBack'};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroName = function (a) {
+	return {ctor: 'UpdateHeroName', _0: a};
+};
+
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$Model = F3(
+	function (a, b, c) {
+		return {newHeroName: a, selectedHero: b, heroesList: c};
+	});
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$DeleteHeroFail = function (a) {
+	return {ctor: 'DeleteHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$DeleteHeroSucceed = function (a) {
+	return {ctor: 'DeleteHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$DeleteHero = function (a) {
+	return {ctor: 'DeleteHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SaveHeroFail = function (a) {
+	return {ctor: 'SaveHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SaveHeroSucceed = function (a) {
+	return {ctor: 'SaveHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SaveHero = {ctor: 'SaveHero'};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SelectHero = function (a) {
+	return {ctor: 'SelectHero', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroesList_Types$UpdateNewHeroName = function (a) {
+	return {ctor: 'UpdateNewHeroName', _0: a};
+};
+
+var _elm_lang$elm_architecture_tutorial$HeroSearch_Types$Model = F2(
+	function (a, b) {
+		return {heroesList: a, searchBox: b};
+	});
+var _elm_lang$elm_architecture_tutorial$HeroSearch_Types$ViewDetails = function (a) {
+	return {ctor: 'ViewDetails', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$HeroSearch_Types$UpdateSearchBox = function (a) {
+	return {ctor: 'UpdateSearchBox', _0: a};
+};
+
+var _elm_lang$elm_architecture_tutorial$Dashboard_Types$Model = F2(
+	function (a, b) {
+		return {heroesList: a, heroSearchModel: b};
+	});
+var _elm_lang$elm_architecture_tutorial$Dashboard_Types$HeroSearch = function (a) {
+	return {ctor: 'HeroSearch', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$Dashboard_Types$ViewDetails = function (a) {
+	return {ctor: 'ViewDetails', _0: a};
+};
+
+var _elm_lang$elm_architecture_tutorial$App_Types$AppModel = F6(
+	function (a, b, c, d, e, f) {
+		return {title: a, route: b, heroesListModel: c, heroDetailModel: d, dashboardModel: e, heroesList: f};
+	});
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroFail = function (a) {
+	return {ctor: 'FetchHeroFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed = function (a) {
+	return {ctor: 'FetchHeroSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchFail = function (a) {
+	return {ctor: 'FetchFail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed = function (a) {
+	return {ctor: 'FetchSucceed', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$DashboardT = function (a) {
+	return {ctor: 'DashboardT', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$HeroesList = function (a) {
+	return {ctor: 'HeroesList', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetail = function (a) {
+	return {ctor: 'HeroDetail', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$NotFoundRoute = {ctor: 'NotFoundRoute'};
+var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetails = function (a) {
+	return {ctor: 'HeroDetails', _0: a};
+};
+var _elm_lang$elm_architecture_tutorial$App_Types$Heroes = {ctor: 'Heroes'};
+var _elm_lang$elm_architecture_tutorial$App_Types$Dashboard = {ctor: 'Dashboard'};
+
+var _elm_lang$elm_architecture_tutorial$App_Rest$delete = function (url) {
+	var config = {
+		verb: 'DELETE',
+		headers: _elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+			]),
+		url: url,
+		body: _evancz$elm_http$Http$empty
+	};
+	return A2(
+		_evancz$elm_http$Http$fromJson,
+		_elm_lang$core$Json_Decode$succeed(
+			A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, '')),
+		A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$encodeHero = function (hero) {
+	return _elm_lang$core$Json_Encode$object(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{
+				ctor: '_Tuple2',
+				_0: 'id',
+				_1: _elm_lang$core$Json_Encode$int(hero.id)
+			},
+				{
+				ctor: '_Tuple2',
+				_0: 'name',
+				_1: _elm_lang$core$Json_Encode$string(hero.name)
+			}
+			]));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody = function (hero) {
+	return _evancz$elm_http$Http$string(
+		A2(
+			_elm_lang$core$Json_Encode$encode,
+			0,
+			_elm_lang$elm_architecture_tutorial$App_Rest$encodeHero(hero)));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero = A3(
+	_elm_lang$core$Json_Decode$object2,
+	_elm_lang$elm_architecture_tutorial$Hero_Types$Hero,
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['id']),
+		_elm_lang$core$Json_Decode$int),
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		_elm_lang$core$Native_List.fromArray(
+			['name']),
+		_elm_lang$core$Json_Decode$string));
+var _elm_lang$elm_architecture_tutorial$App_Rest$put = F2(
+	function (url, hero) {
+		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
+		var config = {
+			verb: 'PUT',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+				]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$post = F2(
+	function (url, hero) {
+		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
+		var config = {
+			verb: 'POST',
+			headers: _elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
+				]),
+			url: url,
+			body: body
+		};
+		return A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
+			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
+	});
+var _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero = _elm_lang$core$Json_Decode$list(_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero);
+var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHero = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed,
+		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero, url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes = function (url) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchFail,
+		_elm_lang$elm_architecture_tutorial$App_Types$FetchSucceed,
+		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero, url));
+};
+var _elm_lang$elm_architecture_tutorial$App_Rest$heroes = _elm_lang$core$Native_List.fromArray(
+	[
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, 'Mr. Nice'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 2, 'Narco'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 3, 'Bombasto'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 4, 'Celeritas'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 5, 'Magneta'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 6, 'RubberMan'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 7, 'Dynama'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 8, 'Dr IQ'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 9, 'Magma'),
+		A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 10, 'Tornado')
+	]);
+var _elm_lang$elm_architecture_tutorial$App_Rest$getHeroes = _elm_lang$elm_architecture_tutorial$App_Rest$heroes;
+
 //import Native.Json //
 
 var _elm_lang$virtual_dom$Native_VirtualDom = function() {
@@ -8422,6 +9000,314 @@ var _elm_lang$navigation$Navigation$subMap = F2(
 	});
 _elm_lang$core$Native_Platform.effectManagers['Navigation'] = {pkg: 'elm-lang/navigation', init: _elm_lang$navigation$Navigation$init, onEffects: _elm_lang$navigation$Navigation$onEffects, onSelfMsg: _elm_lang$navigation$Navigation$onSelfMsg, tag: 'fx', cmdMap: _elm_lang$navigation$Navigation$cmdMap, subMap: _elm_lang$navigation$Navigation$subMap};
 
+var _evancz$url_parser$UrlParser$oneOfHelp = F3(
+	function (choices, chunks, formatter) {
+		oneOfHelp:
+		while (true) {
+			var _p0 = choices;
+			if (_p0.ctor === '[]') {
+				return _elm_lang$core$Result$Err('Tried many parsers, but none of them worked!');
+			} else {
+				var _p1 = A2(_p0._0._0, chunks, formatter);
+				if (_p1.ctor === 'Err') {
+					var _v2 = _p0._1,
+						_v3 = chunks,
+						_v4 = formatter;
+					choices = _v2;
+					chunks = _v3;
+					formatter = _v4;
+					continue oneOfHelp;
+				} else {
+					return _elm_lang$core$Result$Ok(_p1._0);
+				}
+			}
+		}
+	});
+var _evancz$url_parser$UrlParser$Chunks = F2(
+	function (a, b) {
+		return {seen: a, rest: b};
+	});
+var _evancz$url_parser$UrlParser$parse = F3(
+	function (input, _p2, url) {
+		var _p3 = _p2;
+		var _p4 = A2(
+			_p3._0,
+			A2(
+				_evancz$url_parser$UrlParser$Chunks,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				A2(_elm_lang$core$String$split, '/', url)),
+			input);
+		if (_p4.ctor === 'Err') {
+			return _elm_lang$core$Result$Err(_p4._0);
+		} else {
+			var _p7 = _p4._0._1;
+			var _p6 = _p4._0._0.rest;
+			var _p5 = _p6;
+			if (_p5.ctor === '[]') {
+				return _elm_lang$core$Result$Ok(_p7);
+			} else {
+				if ((_p5._0 === '') && (_p5._1.ctor === '[]')) {
+					return _elm_lang$core$Result$Ok(_p7);
+				} else {
+					return _elm_lang$core$Result$Err(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'The parser worked, but /',
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								A2(_elm_lang$core$String$join, '/', _p6),
+								' was left over.')));
+				}
+			}
+		}
+	});
+var _evancz$url_parser$UrlParser$Parser = function (a) {
+	return {ctor: 'Parser', _0: a};
+};
+var _evancz$url_parser$UrlParser$s = function (str) {
+	return _evancz$url_parser$UrlParser$Parser(
+		F2(
+			function (_p8, result) {
+				var _p9 = _p8;
+				var _p12 = _p9.rest;
+				var _p10 = _p12;
+				if (_p10.ctor === '[]') {
+					return _elm_lang$core$Result$Err(
+						A2(_elm_lang$core$Basics_ops['++'], 'Got to the end of the URL but wanted /', str));
+				} else {
+					var _p11 = _p10._0;
+					return _elm_lang$core$Native_Utils.eq(_p11, str) ? _elm_lang$core$Result$Ok(
+						{
+							ctor: '_Tuple2',
+							_0: A2(
+								_evancz$url_parser$UrlParser$Chunks,
+								A2(_elm_lang$core$List_ops['::'], _p11, _p9.seen),
+								_p10._1),
+							_1: result
+						}) : _elm_lang$core$Result$Err(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'Wanted /',
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								str,
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									' but got /',
+									A2(_elm_lang$core$String$join, '/', _p12)))));
+				}
+			}));
+};
+var _evancz$url_parser$UrlParser$custom = F2(
+	function (tipe, stringToSomething) {
+		return _evancz$url_parser$UrlParser$Parser(
+			F2(
+				function (_p13, func) {
+					var _p14 = _p13;
+					var _p15 = _p14.rest;
+					if (_p15.ctor === '[]') {
+						return _elm_lang$core$Result$Err(
+							A2(_elm_lang$core$Basics_ops['++'], 'Got to the end of the URL but wanted /', tipe));
+					} else {
+						var _p17 = _p15._0;
+						var _p16 = stringToSomething(_p17);
+						if (_p16.ctor === 'Ok') {
+							return _elm_lang$core$Result$Ok(
+								{
+									ctor: '_Tuple2',
+									_0: A2(
+										_evancz$url_parser$UrlParser$Chunks,
+										A2(_elm_lang$core$List_ops['::'], _p17, _p14.seen),
+										_p15._1),
+									_1: func(_p16._0)
+								});
+						} else {
+							return _elm_lang$core$Result$Err(
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									'Parsing `',
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										_p17,
+										A2(_elm_lang$core$Basics_ops['++'], '` went wrong: ', _p16._0))));
+						}
+					}
+				}));
+	});
+var _evancz$url_parser$UrlParser$string = A2(_evancz$url_parser$UrlParser$custom, 'STRING', _elm_lang$core$Result$Ok);
+var _evancz$url_parser$UrlParser$int = A2(_evancz$url_parser$UrlParser$custom, 'NUMBER', _elm_lang$core$String$toInt);
+var _evancz$url_parser$UrlParser_ops = _evancz$url_parser$UrlParser_ops || {};
+_evancz$url_parser$UrlParser_ops['</>'] = F2(
+	function (_p19, _p18) {
+		var _p20 = _p19;
+		var _p21 = _p18;
+		return _evancz$url_parser$UrlParser$Parser(
+			F2(
+				function (chunks, func) {
+					return A2(
+						_elm_lang$core$Result$andThen,
+						A2(_p20._0, chunks, func),
+						function (_p22) {
+							var _p23 = _p22;
+							return A2(_p21._0, _p23._0, _p23._1);
+						});
+				}));
+	});
+var _evancz$url_parser$UrlParser$oneOf = function (choices) {
+	return _evancz$url_parser$UrlParser$Parser(
+		_evancz$url_parser$UrlParser$oneOfHelp(choices));
+};
+var _evancz$url_parser$UrlParser$format = F2(
+	function (input, _p24) {
+		var _p25 = _p24;
+		return _evancz$url_parser$UrlParser$Parser(
+			F2(
+				function (chunks, func) {
+					var _p26 = A2(_p25._0, chunks, input);
+					if (_p26.ctor === 'Err') {
+						return _elm_lang$core$Result$Err(_p26._0);
+					} else {
+						return _elm_lang$core$Result$Ok(
+							{
+								ctor: '_Tuple2',
+								_0: _p26._0._0,
+								_1: func(_p26._0._1)
+							});
+					}
+				}));
+	});
+
+var _elm_lang$elm_architecture_tutorial$Routing$routeFromResult = function (result) {
+	var _p0 = result;
+	if (_p0.ctor === 'Ok') {
+		return _p0._0;
+	} else {
+		return _elm_lang$elm_architecture_tutorial$App_Types$NotFoundRoute;
+	}
+};
+var _elm_lang$elm_architecture_tutorial$Routing$matchers = _evancz$url_parser$UrlParser$oneOf(
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_evancz$url_parser$UrlParser$format,
+			_elm_lang$elm_architecture_tutorial$App_Types$Dashboard,
+			_evancz$url_parser$UrlParser$s('')),
+			A2(
+			_evancz$url_parser$UrlParser$format,
+			_elm_lang$elm_architecture_tutorial$App_Types$HeroDetails,
+			A2(
+				_evancz$url_parser$UrlParser_ops['</>'],
+				_evancz$url_parser$UrlParser$s('heroes'),
+				_evancz$url_parser$UrlParser$int)),
+			A2(
+			_evancz$url_parser$UrlParser$format,
+			_elm_lang$elm_architecture_tutorial$App_Types$Heroes,
+			_evancz$url_parser$UrlParser$s('heroes')),
+			A2(
+			_evancz$url_parser$UrlParser$format,
+			_elm_lang$elm_architecture_tutorial$App_Types$Dashboard,
+			_evancz$url_parser$UrlParser$s('dashboard'))
+		]));
+var _elm_lang$elm_architecture_tutorial$Routing$hashParser = function (location) {
+	return A3(
+		_evancz$url_parser$UrlParser$parse,
+		_elm_lang$core$Basics$identity,
+		_elm_lang$elm_architecture_tutorial$Routing$matchers,
+		A2(_elm_lang$core$String$dropLeft, 1, location.hash));
+};
+var _elm_lang$elm_architecture_tutorial$Routing$parser = _elm_lang$navigation$Navigation$makeParser(_elm_lang$elm_architecture_tutorial$Routing$hashParser);
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero = F2(
+	function (hero, url) {
+		return A3(
+			_elm_lang$core$Task$perform,
+			_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail,
+			_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed,
+			A2(_elm_lang$elm_architecture_tutorial$App_Rest$put, url, hero));
+	});
+
+var _elm_lang$elm_architecture_tutorial$HeroDetail_State$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$none;
+};
+var _elm_lang$elm_architecture_tutorial$HeroDetail_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'UpdateHeroName':
+				var _p1 = model.selectedHero;
+				if (_p1.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								selectedHero: _elm_lang$core$Maybe$Just(
+									_elm_lang$core$Native_Utils.update(
+										_p1._0,
+										{name: _p0._0}))
+							}),
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				}
+			case 'GoBack':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{selectedHero: _elm_lang$core$Maybe$Nothing}),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$navigation$Navigation$back(1)
+						]));
+			case 'UpdateHero':
+				var _p2 = _p0._0;
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{selectedHero: _elm_lang$core$Maybe$Nothing}),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							A2(
+							_elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero,
+							_p2,
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								'http://localhost:3000/heroes/',
+								_elm_lang$core$Basics$toString(_p2.id)))
+						]));
+			case 'UpdateHeroSucceed':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$navigation$Navigation$back(1)
+						]));
+			default:
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+		}
+	});
+var _elm_lang$elm_architecture_tutorial$HeroDetail_State$init = function () {
+	var model = {heroName: _elm_lang$core$Maybe$Nothing, selectedHero: _elm_lang$core$Maybe$Nothing};
+	return A2(
+		_elm_lang$core$Platform_Cmd_ops['!'],
+		model,
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+}();
+
 var _elm_lang$html$Html_Attributes$attribute = _elm_lang$virtual_dom$VirtualDom$attribute;
 var _elm_lang$html$Html_Attributes$contextmenu = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$attribute, 'contextmenu', value);
@@ -8875,621 +9761,6 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-//import Dict, List, Maybe, Native.Scheduler //
-
-var _evancz$elm_http$Native_Http = function() {
-
-function send(settings, request)
-{
-	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-		var req = new XMLHttpRequest();
-
-		// start
-		if (settings.onStart.ctor === 'Just')
-		{
-			req.addEventListener('loadStart', function() {
-				var task = settings.onStart._0;
-				_elm_lang$core$Native_Scheduler.rawSpawn(task);
-			});
-		}
-
-		// progress
-		if (settings.onProgress.ctor === 'Just')
-		{
-			req.addEventListener('progress', function(event) {
-				var progress = !event.lengthComputable
-					? _elm_lang$core$Maybe$Nothing
-					: _elm_lang$core$Maybe$Just({
-						loaded: event.loaded,
-						total: event.total
-					});
-				var task = settings.onProgress._0(progress);
-				_elm_lang$core$Native_Scheduler.rawSpawn(task);
-			});
-		}
-
-		// end
-		req.addEventListener('error', function() {
-			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawNetworkError' }));
-		});
-
-		req.addEventListener('timeout', function() {
-			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawTimeout' }));
-		});
-
-		req.addEventListener('load', function() {
-			return callback(_elm_lang$core$Native_Scheduler.succeed(toResponse(req)));
-		});
-
-		req.open(request.verb, request.url, true);
-
-		// set all the headers
-		function setHeader(pair) {
-			req.setRequestHeader(pair._0, pair._1);
-		}
-		A2(_elm_lang$core$List$map, setHeader, request.headers);
-
-		// set the timeout
-		req.timeout = settings.timeout;
-
-		// enable this withCredentials thing
-		req.withCredentials = settings.withCredentials;
-
-		// ask for a specific MIME type for the response
-		if (settings.desiredResponseType.ctor === 'Just')
-		{
-			req.overrideMimeType(settings.desiredResponseType._0);
-		}
-
-		// actuall send the request
-		if(request.body.ctor === "BodyFormData")
-		{
-			req.send(request.body.formData)
-		}
-		else
-		{
-			req.send(request.body._0);
-		}
-
-		return function() {
-			req.abort();
-		};
-	});
-}
-
-
-// deal with responses
-
-function toResponse(req)
-{
-	var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
-	var response = tag === 'Blob' ? req.response : req.responseText;
-	return {
-		status: req.status,
-		statusText: req.statusText,
-		headers: parseHeaders(req.getAllResponseHeaders()),
-		url: req.responseURL,
-		value: { ctor: tag, _0: response }
-	};
-}
-
-
-function parseHeaders(rawHeaders)
-{
-	var headers = _elm_lang$core$Dict$empty;
-
-	if (!rawHeaders)
-	{
-		return headers;
-	}
-
-	var headerPairs = rawHeaders.split('\u000d\u000a');
-	for (var i = headerPairs.length; i--; )
-	{
-		var headerPair = headerPairs[i];
-		var index = headerPair.indexOf('\u003a\u0020');
-		if (index > 0)
-		{
-			var key = headerPair.substring(0, index);
-			var value = headerPair.substring(index + 2);
-
-			headers = A3(_elm_lang$core$Dict$update, key, function(oldValue) {
-				if (oldValue.ctor === 'Just')
-				{
-					return _elm_lang$core$Maybe$Just(value + ', ' + oldValue._0);
-				}
-				return _elm_lang$core$Maybe$Just(value);
-			}, headers);
-		}
-	}
-
-	return headers;
-}
-
-
-function multipart(dataList)
-{
-	var formData = new FormData();
-
-	while (dataList.ctor !== '[]')
-	{
-		var data = dataList._0;
-		if (data.ctor === 'StringData')
-		{
-			formData.append(data._0, data._1);
-		}
-		else
-		{
-			var fileName = data._1.ctor === 'Nothing'
-				? undefined
-				: data._1._0;
-			formData.append(data._0, data._2, fileName);
-		}
-		dataList = dataList._1;
-	}
-
-	return { ctor: 'BodyFormData', formData: formData };
-}
-
-
-function uriEncode(string)
-{
-	return encodeURIComponent(string);
-}
-
-function uriDecode(string)
-{
-	return decodeURIComponent(string);
-}
-
-return {
-	send: F2(send),
-	multipart: multipart,
-	uriEncode: uriEncode,
-	uriDecode: uriDecode
-};
-
-}();
-
-var _evancz$elm_http$Http$send = _evancz$elm_http$Native_Http.send;
-var _evancz$elm_http$Http$defaultSettings = {timeout: 0, onStart: _elm_lang$core$Maybe$Nothing, onProgress: _elm_lang$core$Maybe$Nothing, desiredResponseType: _elm_lang$core$Maybe$Nothing, withCredentials: false};
-var _evancz$elm_http$Http$multipart = _evancz$elm_http$Native_Http.multipart;
-var _evancz$elm_http$Http$uriDecode = _evancz$elm_http$Native_Http.uriDecode;
-var _evancz$elm_http$Http$uriEncode = _evancz$elm_http$Native_Http.uriEncode;
-var _evancz$elm_http$Http$queryEscape = function (string) {
-	return A2(
-		_elm_lang$core$String$join,
-		'+',
-		A2(
-			_elm_lang$core$String$split,
-			'%20',
-			_evancz$elm_http$Http$uriEncode(string)));
-};
-var _evancz$elm_http$Http$queryPair = function (_p0) {
-	var _p1 = _p0;
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		_evancz$elm_http$Http$queryEscape(_p1._0),
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			'=',
-			_evancz$elm_http$Http$queryEscape(_p1._1)));
-};
-var _evancz$elm_http$Http$url = F2(
-	function (baseUrl, args) {
-		var _p2 = args;
-		if (_p2.ctor === '[]') {
-			return baseUrl;
-		} else {
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				baseUrl,
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					'?',
-					A2(
-						_elm_lang$core$String$join,
-						'&',
-						A2(_elm_lang$core$List$map, _evancz$elm_http$Http$queryPair, args))));
-		}
-	});
-var _evancz$elm_http$Http$Request = F4(
-	function (a, b, c, d) {
-		return {verb: a, headers: b, url: c, body: d};
-	});
-var _evancz$elm_http$Http$Settings = F5(
-	function (a, b, c, d, e) {
-		return {timeout: a, onStart: b, onProgress: c, desiredResponseType: d, withCredentials: e};
-	});
-var _evancz$elm_http$Http$Response = F5(
-	function (a, b, c, d, e) {
-		return {status: a, statusText: b, headers: c, url: d, value: e};
-	});
-var _evancz$elm_http$Http$TODO_implement_blob_in_another_library = {ctor: 'TODO_implement_blob_in_another_library'};
-var _evancz$elm_http$Http$TODO_implement_file_in_another_library = {ctor: 'TODO_implement_file_in_another_library'};
-var _evancz$elm_http$Http$BodyBlob = function (a) {
-	return {ctor: 'BodyBlob', _0: a};
-};
-var _evancz$elm_http$Http$BodyFormData = {ctor: 'BodyFormData'};
-var _evancz$elm_http$Http$ArrayBuffer = {ctor: 'ArrayBuffer'};
-var _evancz$elm_http$Http$BodyString = function (a) {
-	return {ctor: 'BodyString', _0: a};
-};
-var _evancz$elm_http$Http$string = _evancz$elm_http$Http$BodyString;
-var _evancz$elm_http$Http$Empty = {ctor: 'Empty'};
-var _evancz$elm_http$Http$empty = _evancz$elm_http$Http$Empty;
-var _evancz$elm_http$Http$FileData = F3(
-	function (a, b, c) {
-		return {ctor: 'FileData', _0: a, _1: b, _2: c};
-	});
-var _evancz$elm_http$Http$BlobData = F3(
-	function (a, b, c) {
-		return {ctor: 'BlobData', _0: a, _1: b, _2: c};
-	});
-var _evancz$elm_http$Http$blobData = _evancz$elm_http$Http$BlobData;
-var _evancz$elm_http$Http$StringData = F2(
-	function (a, b) {
-		return {ctor: 'StringData', _0: a, _1: b};
-	});
-var _evancz$elm_http$Http$stringData = _evancz$elm_http$Http$StringData;
-var _evancz$elm_http$Http$Blob = function (a) {
-	return {ctor: 'Blob', _0: a};
-};
-var _evancz$elm_http$Http$Text = function (a) {
-	return {ctor: 'Text', _0: a};
-};
-var _evancz$elm_http$Http$RawNetworkError = {ctor: 'RawNetworkError'};
-var _evancz$elm_http$Http$RawTimeout = {ctor: 'RawTimeout'};
-var _evancz$elm_http$Http$BadResponse = F2(
-	function (a, b) {
-		return {ctor: 'BadResponse', _0: a, _1: b};
-	});
-var _evancz$elm_http$Http$UnexpectedPayload = function (a) {
-	return {ctor: 'UnexpectedPayload', _0: a};
-};
-var _evancz$elm_http$Http$handleResponse = F2(
-	function (handle, response) {
-		if ((_elm_lang$core$Native_Utils.cmp(200, response.status) < 1) && (_elm_lang$core$Native_Utils.cmp(response.status, 300) < 0)) {
-			var _p3 = response.value;
-			if (_p3.ctor === 'Text') {
-				return handle(_p3._0);
-			} else {
-				return _elm_lang$core$Task$fail(
-					_evancz$elm_http$Http$UnexpectedPayload('Response body is a blob, expecting a string.'));
-			}
-		} else {
-			return _elm_lang$core$Task$fail(
-				A2(_evancz$elm_http$Http$BadResponse, response.status, response.statusText));
-		}
-	});
-var _evancz$elm_http$Http$NetworkError = {ctor: 'NetworkError'};
-var _evancz$elm_http$Http$Timeout = {ctor: 'Timeout'};
-var _evancz$elm_http$Http$promoteError = function (rawError) {
-	var _p4 = rawError;
-	if (_p4.ctor === 'RawTimeout') {
-		return _evancz$elm_http$Http$Timeout;
-	} else {
-		return _evancz$elm_http$Http$NetworkError;
-	}
-};
-var _evancz$elm_http$Http$getString = function (url) {
-	var request = {
-		verb: 'GET',
-		headers: _elm_lang$core$Native_List.fromArray(
-			[]),
-		url: url,
-		body: _evancz$elm_http$Http$empty
-	};
-	return A2(
-		_elm_lang$core$Task$andThen,
-		A2(
-			_elm_lang$core$Task$mapError,
-			_evancz$elm_http$Http$promoteError,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request)),
-		_evancz$elm_http$Http$handleResponse(_elm_lang$core$Task$succeed));
-};
-var _evancz$elm_http$Http$fromJson = F2(
-	function (decoder, response) {
-		var decode = function (str) {
-			var _p5 = A2(_elm_lang$core$Json_Decode$decodeString, decoder, str);
-			if (_p5.ctor === 'Ok') {
-				return _elm_lang$core$Task$succeed(_p5._0);
-			} else {
-				return _elm_lang$core$Task$fail(
-					_evancz$elm_http$Http$UnexpectedPayload(_p5._0));
-			}
-		};
-		return A2(
-			_elm_lang$core$Task$andThen,
-			A2(_elm_lang$core$Task$mapError, _evancz$elm_http$Http$promoteError, response),
-			_evancz$elm_http$Http$handleResponse(decode));
-	});
-var _evancz$elm_http$Http$get = F2(
-	function (decoder, url) {
-		var request = {
-			verb: 'GET',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[]),
-			url: url,
-			body: _evancz$elm_http$Http$empty
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-var _evancz$elm_http$Http$post = F3(
-	function (decoder, url, body) {
-		var request = {
-			verb: 'POST',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-
-var _elm_lang$elm_architecture_tutorial$Hero_Types$Hero = F2(
-	function (a, b) {
-		return {id: a, name: b};
-	});
-
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$Model = F2(
-	function (a, b) {
-		return {heroName: a, selectedHero: b};
-	});
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail = function (a) {
-	return {ctor: 'UpdateHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed = function (a) {
-	return {ctor: 'UpdateHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHero = function (a) {
-	return {ctor: 'UpdateHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$GoBack = {ctor: 'GoBack'};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroName = function (a) {
-	return {ctor: 'UpdateHeroName', _0: a};
-};
-
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$Model = F3(
-	function (a, b, c) {
-		return {newHeroName: a, selectedHero: b, heroesList: c};
-	});
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$FetchFail = function (a) {
-	return {ctor: 'FetchFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$FetchSucceed = function (a) {
-	return {ctor: 'FetchSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$DeleteHeroFail = function (a) {
-	return {ctor: 'DeleteHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$DeleteHeroSucceed = function (a) {
-	return {ctor: 'DeleteHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$DeleteHero = function (a) {
-	return {ctor: 'DeleteHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SaveHeroFail = function (a) {
-	return {ctor: 'SaveHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SaveHeroSucceed = function (a) {
-	return {ctor: 'SaveHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SaveHero = {ctor: 'SaveHero'};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$ViewDetails = function (a) {
-	return {ctor: 'ViewDetails', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$SelectHero = function (a) {
-	return {ctor: 'SelectHero', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroesList_Types$UpdateNewHeroName = function (a) {
-	return {ctor: 'UpdateNewHeroName', _0: a};
-};
-
-var _elm_lang$elm_architecture_tutorial$HeroSearch_Types$Model = F2(
-	function (a, b) {
-		return {heroesList: a, searchBox: b};
-	});
-var _elm_lang$elm_architecture_tutorial$HeroSearch_Types$ViewDetails = function (a) {
-	return {ctor: 'ViewDetails', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$HeroSearch_Types$UpdateSearchBox = function (a) {
-	return {ctor: 'UpdateSearchBox', _0: a};
-};
-
-var _elm_lang$elm_architecture_tutorial$Dashboard_Types$Model = F2(
-	function (a, b) {
-		return {heroesList: a, heroSearchModel: b};
-	});
-var _elm_lang$elm_architecture_tutorial$Dashboard_Types$FetchFail = function (a) {
-	return {ctor: 'FetchFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Dashboard_Types$FetchSucceed = function (a) {
-	return {ctor: 'FetchSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Dashboard_Types$HeroSearch = function (a) {
-	return {ctor: 'HeroSearch', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$Dashboard_Types$ViewDetails = function (a) {
-	return {ctor: 'ViewDetails', _0: a};
-};
-
-var _elm_lang$elm_architecture_tutorial$App_Types$AppModel = F6(
-	function (a, b, c, d, e, f) {
-		return {title: a, route: b, heroesListModel: c, heroDetailModel: d, dashboardModel: e, heroesList: f};
-	});
-var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroFail = function (a) {
-	return {ctor: 'FetchHeroFail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed = function (a) {
-	return {ctor: 'FetchHeroSucceed', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$DashboardT = function (a) {
-	return {ctor: 'DashboardT', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$HeroesList = function (a) {
-	return {ctor: 'HeroesList', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetail = function (a) {
-	return {ctor: 'HeroDetail', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$NotFoundRoute = {ctor: 'NotFoundRoute'};
-var _elm_lang$elm_architecture_tutorial$App_Types$HeroDetails = function (a) {
-	return {ctor: 'HeroDetails', _0: a};
-};
-var _elm_lang$elm_architecture_tutorial$App_Types$Heroes = {ctor: 'Heroes'};
-var _elm_lang$elm_architecture_tutorial$App_Types$Dashboard = {ctor: 'Dashboard'};
-
-var _elm_lang$elm_architecture_tutorial$HeroSearch_View$searchHero = F2(
-	function (string, heroesList) {
-		return A2(
-			_elm_lang$core$List$filter,
-			function (hero) {
-				return A2(
-					_elm_lang$core$String$contains,
-					string,
-					_elm_lang$core$String$toLower(hero.name));
-			},
-			heroesList);
-	});
-var _elm_lang$elm_architecture_tutorial$HeroSearch_View$heroSearchItem = function (hero) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('search-result'),
-				_elm_lang$html$Html_Events$onClick(
-				_elm_lang$elm_architecture_tutorial$HeroSearch_Types$ViewDetails(hero))
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html$text(hero.name)
-			]));
-};
-var _elm_lang$elm_architecture_tutorial$HeroSearch_View$root = function (model) {
-	var heroesList = function () {
-		var _p0 = model.searchBox;
-		if (_p0.ctor === 'Just') {
-			return A2(
-				_elm_lang$core$List$map,
-				_elm_lang$elm_architecture_tutorial$HeroSearch_View$heroSearchItem,
-				A2(_elm_lang$elm_architecture_tutorial$HeroSearch_View$searchHero, _p0._0, model.heroesList));
-		} else {
-			return _elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[]))
-				]);
-		}
-	}();
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$h4,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Hero Search')
-					])),
-				A2(
-				_elm_lang$html$Html$input,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$id('search-box'),
-						_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$HeroSearch_Types$UpdateSearchBox)
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				heroesList)
-			]));
-};
-
-var _elm_lang$elm_architecture_tutorial$Dashboard_View$heroDashboard = function (hero) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('col-1-4'),
-				_elm_lang$html$Html_Events$onClick(
-				_elm_lang$elm_architecture_tutorial$Dashboard_Types$ViewDetails(hero))
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('module hero')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$h4,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text(hero.name)
-							]))
-					]))
-			]));
-};
-var _elm_lang$elm_architecture_tutorial$Dashboard_View$dashboardView = function (list) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		A2(
-			_elm_lang$core$List$map,
-			_elm_lang$elm_architecture_tutorial$Dashboard_View$heroDashboard,
-			A2(
-				_elm_lang$core$List$take,
-				4,
-				A2(_elm_lang$core$List$drop, 1, list))));
-};
-var _elm_lang$elm_architecture_tutorial$Dashboard_View$root = function (model) {
-	var heroesList = model.heroesList;
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$h3,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Top Heroes')
-					])),
-				_elm_lang$elm_architecture_tutorial$Dashboard_View$dashboardView(model.heroesList),
-				A2(
-				_elm_lang$html$Html_App$map,
-				_elm_lang$elm_architecture_tutorial$Dashboard_Types$HeroSearch,
-				_elm_lang$elm_architecture_tutorial$HeroSearch_View$root(model.heroSearchModel))
-			]));
-};
-
 var _elm_lang$elm_architecture_tutorial$HeroDetail_View$root = function (maybeHero) {
 	var _p0 = maybeHero;
 	if (_p0.ctor === 'Just') {
@@ -9748,9 +10019,152 @@ var _elm_lang$elm_architecture_tutorial$HeroesList_View$root = function (model) 
 						A2(
 							_elm_lang$core$Maybe$withDefault,
 							A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 0, ''),
-							model.selectedHero)),
+							model.heroDetailModel.selectedHero)),
 					model.heroesList)),
-				_elm_lang$elm_architecture_tutorial$HeroesList_View$miniDetail(model.selectedHero)
+				_elm_lang$elm_architecture_tutorial$HeroesList_View$miniDetail(model.heroDetailModel.selectedHero)
+			]));
+};
+
+var _elm_lang$elm_architecture_tutorial$HeroSearch_View$searchHero = F2(
+	function (string, heroesList) {
+		return A2(
+			_elm_lang$core$List$filter,
+			function (hero) {
+				return A2(
+					_elm_lang$core$String$contains,
+					string,
+					_elm_lang$core$String$toLower(hero.name));
+			},
+			heroesList);
+	});
+var _elm_lang$elm_architecture_tutorial$HeroSearch_View$heroSearchItem = function (hero) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('search-result'),
+				_elm_lang$html$Html_Events$onClick(
+				_elm_lang$elm_architecture_tutorial$HeroSearch_Types$ViewDetails(hero))
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(hero.name)
+			]));
+};
+var _elm_lang$elm_architecture_tutorial$HeroSearch_View$root = function (model) {
+	var heroesList = function () {
+		var _p0 = model.searchBox;
+		if (_p0.ctor === 'Just') {
+			return A2(
+				_elm_lang$core$List$map,
+				_elm_lang$elm_architecture_tutorial$HeroSearch_View$heroSearchItem,
+				A2(_elm_lang$elm_architecture_tutorial$HeroSearch_View$searchHero, _p0._0, model.heroesList));
+		} else {
+			return _elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[]))
+				]);
+		}
+	}();
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h4,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Hero Search')
+					])),
+				A2(
+				_elm_lang$html$Html$input,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$id('search-box'),
+						_elm_lang$html$Html_Events$onInput(_elm_lang$elm_architecture_tutorial$HeroSearch_Types$UpdateSearchBox)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				heroesList)
+			]));
+};
+
+var _elm_lang$elm_architecture_tutorial$Dashboard_View$heroDashboard = function (hero) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('col-1-4'),
+				_elm_lang$html$Html_Events$onClick(
+				_elm_lang$elm_architecture_tutorial$Dashboard_Types$ViewDetails(hero))
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('module hero')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$h4,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(hero.name)
+							]))
+					]))
+			]));
+};
+var _elm_lang$elm_architecture_tutorial$Dashboard_View$dashboardView = function (list) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		A2(
+			_elm_lang$core$List$map,
+			_elm_lang$elm_architecture_tutorial$Dashboard_View$heroDashboard,
+			A2(
+				_elm_lang$core$List$take,
+				4,
+				A2(_elm_lang$core$List$drop, 1, list))));
+};
+var _elm_lang$elm_architecture_tutorial$Dashboard_View$root = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$h3,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Top Heroes')
+					])),
+				_elm_lang$elm_architecture_tutorial$Dashboard_View$dashboardView(model.heroesList),
+				A2(
+				_elm_lang$html$Html_App$map,
+				_elm_lang$elm_architecture_tutorial$Dashboard_Types$HeroSearch,
+				_elm_lang$elm_architecture_tutorial$HeroSearch_View$root(model))
 			]));
 };
 
@@ -9846,543 +10260,6 @@ var _elm_lang$elm_architecture_tutorial$App_View$root = function (model) {
 			]));
 };
 
-var _evancz$url_parser$UrlParser$oneOfHelp = F3(
-	function (choices, chunks, formatter) {
-		oneOfHelp:
-		while (true) {
-			var _p0 = choices;
-			if (_p0.ctor === '[]') {
-				return _elm_lang$core$Result$Err('Tried many parsers, but none of them worked!');
-			} else {
-				var _p1 = A2(_p0._0._0, chunks, formatter);
-				if (_p1.ctor === 'Err') {
-					var _v2 = _p0._1,
-						_v3 = chunks,
-						_v4 = formatter;
-					choices = _v2;
-					chunks = _v3;
-					formatter = _v4;
-					continue oneOfHelp;
-				} else {
-					return _elm_lang$core$Result$Ok(_p1._0);
-				}
-			}
-		}
-	});
-var _evancz$url_parser$UrlParser$Chunks = F2(
-	function (a, b) {
-		return {seen: a, rest: b};
-	});
-var _evancz$url_parser$UrlParser$parse = F3(
-	function (input, _p2, url) {
-		var _p3 = _p2;
-		var _p4 = A2(
-			_p3._0,
-			A2(
-				_evancz$url_parser$UrlParser$Chunks,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				A2(_elm_lang$core$String$split, '/', url)),
-			input);
-		if (_p4.ctor === 'Err') {
-			return _elm_lang$core$Result$Err(_p4._0);
-		} else {
-			var _p7 = _p4._0._1;
-			var _p6 = _p4._0._0.rest;
-			var _p5 = _p6;
-			if (_p5.ctor === '[]') {
-				return _elm_lang$core$Result$Ok(_p7);
-			} else {
-				if ((_p5._0 === '') && (_p5._1.ctor === '[]')) {
-					return _elm_lang$core$Result$Ok(_p7);
-				} else {
-					return _elm_lang$core$Result$Err(
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'The parser worked, but /',
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								A2(_elm_lang$core$String$join, '/', _p6),
-								' was left over.')));
-				}
-			}
-		}
-	});
-var _evancz$url_parser$UrlParser$Parser = function (a) {
-	return {ctor: 'Parser', _0: a};
-};
-var _evancz$url_parser$UrlParser$s = function (str) {
-	return _evancz$url_parser$UrlParser$Parser(
-		F2(
-			function (_p8, result) {
-				var _p9 = _p8;
-				var _p12 = _p9.rest;
-				var _p10 = _p12;
-				if (_p10.ctor === '[]') {
-					return _elm_lang$core$Result$Err(
-						A2(_elm_lang$core$Basics_ops['++'], 'Got to the end of the URL but wanted /', str));
-				} else {
-					var _p11 = _p10._0;
-					return _elm_lang$core$Native_Utils.eq(_p11, str) ? _elm_lang$core$Result$Ok(
-						{
-							ctor: '_Tuple2',
-							_0: A2(
-								_evancz$url_parser$UrlParser$Chunks,
-								A2(_elm_lang$core$List_ops['::'], _p11, _p9.seen),
-								_p10._1),
-							_1: result
-						}) : _elm_lang$core$Result$Err(
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'Wanted /',
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								str,
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									' but got /',
-									A2(_elm_lang$core$String$join, '/', _p12)))));
-				}
-			}));
-};
-var _evancz$url_parser$UrlParser$custom = F2(
-	function (tipe, stringToSomething) {
-		return _evancz$url_parser$UrlParser$Parser(
-			F2(
-				function (_p13, func) {
-					var _p14 = _p13;
-					var _p15 = _p14.rest;
-					if (_p15.ctor === '[]') {
-						return _elm_lang$core$Result$Err(
-							A2(_elm_lang$core$Basics_ops['++'], 'Got to the end of the URL but wanted /', tipe));
-					} else {
-						var _p17 = _p15._0;
-						var _p16 = stringToSomething(_p17);
-						if (_p16.ctor === 'Ok') {
-							return _elm_lang$core$Result$Ok(
-								{
-									ctor: '_Tuple2',
-									_0: A2(
-										_evancz$url_parser$UrlParser$Chunks,
-										A2(_elm_lang$core$List_ops['::'], _p17, _p14.seen),
-										_p15._1),
-									_1: func(_p16._0)
-								});
-						} else {
-							return _elm_lang$core$Result$Err(
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									'Parsing `',
-									A2(
-										_elm_lang$core$Basics_ops['++'],
-										_p17,
-										A2(_elm_lang$core$Basics_ops['++'], '` went wrong: ', _p16._0))));
-						}
-					}
-				}));
-	});
-var _evancz$url_parser$UrlParser$string = A2(_evancz$url_parser$UrlParser$custom, 'STRING', _elm_lang$core$Result$Ok);
-var _evancz$url_parser$UrlParser$int = A2(_evancz$url_parser$UrlParser$custom, 'NUMBER', _elm_lang$core$String$toInt);
-var _evancz$url_parser$UrlParser_ops = _evancz$url_parser$UrlParser_ops || {};
-_evancz$url_parser$UrlParser_ops['</>'] = F2(
-	function (_p19, _p18) {
-		var _p20 = _p19;
-		var _p21 = _p18;
-		return _evancz$url_parser$UrlParser$Parser(
-			F2(
-				function (chunks, func) {
-					return A2(
-						_elm_lang$core$Result$andThen,
-						A2(_p20._0, chunks, func),
-						function (_p22) {
-							var _p23 = _p22;
-							return A2(_p21._0, _p23._0, _p23._1);
-						});
-				}));
-	});
-var _evancz$url_parser$UrlParser$oneOf = function (choices) {
-	return _evancz$url_parser$UrlParser$Parser(
-		_evancz$url_parser$UrlParser$oneOfHelp(choices));
-};
-var _evancz$url_parser$UrlParser$format = F2(
-	function (input, _p24) {
-		var _p25 = _p24;
-		return _evancz$url_parser$UrlParser$Parser(
-			F2(
-				function (chunks, func) {
-					var _p26 = A2(_p25._0, chunks, input);
-					if (_p26.ctor === 'Err') {
-						return _elm_lang$core$Result$Err(_p26._0);
-					} else {
-						return _elm_lang$core$Result$Ok(
-							{
-								ctor: '_Tuple2',
-								_0: _p26._0._0,
-								_1: func(_p26._0._1)
-							});
-					}
-				}));
-	});
-
-var _elm_lang$elm_architecture_tutorial$Routing$routeFromResult = function (result) {
-	var _p0 = result;
-	if (_p0.ctor === 'Ok') {
-		return _p0._0;
-	} else {
-		return _elm_lang$elm_architecture_tutorial$App_Types$NotFoundRoute;
-	}
-};
-var _elm_lang$elm_architecture_tutorial$Routing$matchers = _evancz$url_parser$UrlParser$oneOf(
-	_elm_lang$core$Native_List.fromArray(
-		[
-			A2(
-			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$App_Types$Dashboard,
-			_evancz$url_parser$UrlParser$s('')),
-			A2(
-			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$App_Types$HeroDetails,
-			A2(
-				_evancz$url_parser$UrlParser_ops['</>'],
-				_evancz$url_parser$UrlParser$s('heroes'),
-				_evancz$url_parser$UrlParser$int)),
-			A2(
-			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$App_Types$Heroes,
-			_evancz$url_parser$UrlParser$s('heroes')),
-			A2(
-			_evancz$url_parser$UrlParser$format,
-			_elm_lang$elm_architecture_tutorial$App_Types$Dashboard,
-			_evancz$url_parser$UrlParser$s('dashboard'))
-		]));
-var _elm_lang$elm_architecture_tutorial$Routing$hashParser = function (location) {
-	return A3(
-		_evancz$url_parser$UrlParser$parse,
-		_elm_lang$core$Basics$identity,
-		_elm_lang$elm_architecture_tutorial$Routing$matchers,
-		A2(_elm_lang$core$String$dropLeft, 1, location.hash));
-};
-var _elm_lang$elm_architecture_tutorial$Routing$parser = _elm_lang$navigation$Navigation$makeParser(_elm_lang$elm_architecture_tutorial$Routing$hashParser);
-
-var _elm_lang$elm_architecture_tutorial$App_Rest$delete = function (url) {
-	var config = {
-		verb: 'DELETE',
-		headers: _elm_lang$core$Native_List.fromArray(
-			[
-				{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-			]),
-		url: url,
-		body: _evancz$elm_http$Http$empty
-	};
-	return A2(
-		_evancz$elm_http$Http$fromJson,
-		_elm_lang$core$Json_Decode$succeed(
-			A2(_elm_lang$elm_architecture_tutorial$Hero_Types$Hero, 1, '')),
-		A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$encodeHero = function (hero) {
-	return _elm_lang$core$Json_Encode$object(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				{
-				ctor: '_Tuple2',
-				_0: 'id',
-				_1: _elm_lang$core$Json_Encode$int(hero.id)
-			},
-				{
-				ctor: '_Tuple2',
-				_0: 'name',
-				_1: _elm_lang$core$Json_Encode$string(hero.name)
-			}
-			]));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody = function (hero) {
-	return _evancz$elm_http$Http$string(
-		A2(
-			_elm_lang$core$Json_Encode$encode,
-			0,
-			_elm_lang$elm_architecture_tutorial$App_Rest$encodeHero(hero)));
-};
-var _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero = A3(
-	_elm_lang$core$Json_Decode$object2,
-	_elm_lang$elm_architecture_tutorial$Hero_Types$Hero,
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['id']),
-		_elm_lang$core$Json_Decode$int),
-	A2(
-		_elm_lang$core$Json_Decode$at,
-		_elm_lang$core$Native_List.fromArray(
-			['name']),
-		_elm_lang$core$Json_Decode$string));
-var _elm_lang$elm_architecture_tutorial$App_Rest$put = F2(
-	function (url, hero) {
-		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
-		var config = {
-			verb: 'PUT',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-				]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-	});
-var _elm_lang$elm_architecture_tutorial$App_Rest$post = F2(
-	function (url, hero) {
-		var body = _elm_lang$elm_architecture_tutorial$App_Rest$encodedHeroBody(hero);
-		var config = {
-			verb: 'POST',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[
-					{ctor: '_Tuple2', _0: 'Content-Type', _1: 'application/json'}
-				]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, config));
-	});
-var _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero = _elm_lang$core$Json_Decode$list(_elm_lang$elm_architecture_tutorial$App_Rest$decodeHero);
-var _elm_lang$elm_architecture_tutorial$App_Rest$fetchHero = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$App_Types$FetchHeroFail,
-		_elm_lang$elm_architecture_tutorial$App_Types$FetchHeroSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeHero, url));
-};
-
-var _elm_lang$elm_architecture_tutorial$Dashboard_Rest$fetchHeroes = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$Dashboard_Types$FetchFail,
-		_elm_lang$elm_architecture_tutorial$Dashboard_Types$FetchSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero, url));
-};
-
-var _elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero = F2(
-	function (hero, url) {
-		return A3(
-			_elm_lang$core$Task$perform,
-			_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroFail,
-			_elm_lang$elm_architecture_tutorial$HeroDetail_Types$UpdateHeroSucceed,
-			A2(_elm_lang$elm_architecture_tutorial$App_Rest$put, url, hero));
-	});
-
-var _elm_lang$elm_architecture_tutorial$HeroDetail_State$subscriptions = function (model) {
-	return _elm_lang$core$Platform_Sub$none;
-};
-var _elm_lang$elm_architecture_tutorial$HeroDetail_State$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'UpdateHeroName':
-				var _p1 = model.selectedHero;
-				if (_p1.ctor === 'Just') {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{
-								selectedHero: _elm_lang$core$Maybe$Just(
-									_elm_lang$core$Native_Utils.update(
-										_p1._0,
-										{name: _p0._0}))
-							}),
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				}
-			case 'GoBack':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$navigation$Navigation$back(1)
-						]));
-			case 'UpdateHero':
-				var _p2 = _p0._0;
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							A2(
-							_elm_lang$elm_architecture_tutorial$HeroDetail_Rest$updateHero,
-							_p2,
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								'http://localhost:3000/heroes/',
-								_elm_lang$core$Basics$toString(_p2.id)))
-						]));
-			case 'UpdateHeroSucceed':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$navigation$Navigation$back(1)
-						]));
-			default:
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-		}
-	});
-var _elm_lang$elm_architecture_tutorial$HeroDetail_State$init = function () {
-	var model = {heroName: _elm_lang$core$Maybe$Nothing, selectedHero: _elm_lang$core$Maybe$Nothing};
-	return A2(
-		_elm_lang$core$Platform_Cmd_ops['!'],
-		model,
-		_elm_lang$core$Native_List.fromArray(
-			[]));
-}();
-
-var _elm_lang$elm_architecture_tutorial$HeroSearch_State$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		if (_p0.ctor === 'UpdateSearchBox') {
-			var _p1 = _p0._0;
-			return _elm_lang$core$Native_Utils.eq(_p1, '') ? A2(
-				_elm_lang$core$Platform_Cmd_ops['!'],
-				_elm_lang$core$Native_Utils.update(
-					model,
-					{searchBox: _elm_lang$core$Maybe$Nothing}),
-				_elm_lang$core$Native_List.fromArray(
-					[])) : A2(
-				_elm_lang$core$Platform_Cmd_ops['!'],
-				_elm_lang$core$Native_Utils.update(
-					model,
-					{
-						searchBox: _elm_lang$core$Maybe$Just(_p1)
-					}),
-				_elm_lang$core$Native_List.fromArray(
-					[]));
-		} else {
-			return A2(
-				_elm_lang$core$Platform_Cmd_ops['!'],
-				_elm_lang$core$Native_Utils.update(
-					model,
-					{searchBox: _elm_lang$core$Maybe$Nothing}),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$navigation$Navigation$newUrl(
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'#heroes/',
-							_elm_lang$core$Basics$toString(_p0._0.id)))
-					]));
-		}
-	});
-var _elm_lang$elm_architecture_tutorial$HeroSearch_State$init = function (list) {
-	var model = {heroesList: list, searchBox: _elm_lang$core$Maybe$Nothing};
-	return A2(
-		_elm_lang$core$Platform_Cmd_ops['!'],
-		model,
-		_elm_lang$core$Native_List.fromArray(
-			[]));
-};
-
-var _elm_lang$elm_architecture_tutorial$Dashboard_State$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'ViewDetails':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroSearchModel: _elm_lang$core$Basics$fst(
-								_elm_lang$elm_architecture_tutorial$HeroSearch_State$init(model.heroesList))
-						}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$navigation$Navigation$newUrl(
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								'#heroes/',
-								_elm_lang$core$Basics$toString(_p0._0.id)))
-						]));
-			case 'HeroSearch':
-				var _p1 = A2(_elm_lang$elm_architecture_tutorial$HeroSearch_State$update, _p0._0, model.heroSearchModel);
-				var newModel = _p1._0;
-				var newCmd = _p1._1;
-				var otroNewModel = _elm_lang$core$Native_Utils.update(
-					newModel,
-					{heroesList: model.heroesList});
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{heroSearchModel: otroNewModel}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							A2(_elm_lang$core$Platform_Cmd$map, _elm_lang$elm_architecture_tutorial$Dashboard_Types$HeroSearch, newCmd)
-						]));
-			case 'FetchSucceed':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{heroesList: _p0._0}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			default:
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							heroesList: _elm_lang$core$Native_List.fromArray(
-								[])
-						}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-		}
-	});
-var _elm_lang$elm_architecture_tutorial$Dashboard_State$init = function () {
-	var model = {
-		heroesList: _elm_lang$core$Native_List.fromArray(
-			[]),
-		heroSearchModel: _elm_lang$core$Basics$fst(
-			_elm_lang$elm_architecture_tutorial$HeroSearch_State$init(
-				_elm_lang$core$Native_List.fromArray(
-					[])))
-	};
-	return A2(
-		_elm_lang$core$Platform_Cmd_ops['!'],
-		model,
-		_elm_lang$core$Native_List.fromArray(
-			[]));
-}();
-
-var _elm_lang$elm_architecture_tutorial$HeroesList_Rest$fetchHeroes = function (url) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$elm_architecture_tutorial$HeroesList_Types$FetchFail,
-		_elm_lang$elm_architecture_tutorial$HeroesList_Types$FetchSucceed,
-		A2(_evancz$elm_http$Http$get, _elm_lang$elm_architecture_tutorial$App_Rest$decodeListHero, url));
-};
 var _elm_lang$elm_architecture_tutorial$HeroesList_Rest$deleteHero = function (url) {
 	return A3(
 		_elm_lang$core$Task$perform,
@@ -10423,20 +10300,6 @@ var _elm_lang$elm_architecture_tutorial$HeroesList_State$update = F2(
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
-			case 'ViewDetails':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{selectedHero: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$navigation$Navigation$newUrl(
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								'#heroes/',
-								_elm_lang$core$Basics$toString(_p0._0.id)))
-						]));
 			case 'SaveHero':
 				var _p1 = model.newHeroName;
 				if (_p1.ctor === 'Just') {
@@ -10500,31 +10363,12 @@ var _elm_lang$elm_architecture_tutorial$HeroesList_State$update = F2(
 						[
 							_elm_lang$navigation$Navigation$newUrl('#heroes')
 						]));
-			case 'DeleteHeroFail':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{newHeroName: _elm_lang$core$Maybe$Nothing}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'FetchSucceed':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{heroesList: _p0._0}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
 			default:
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{
-							heroesList: _elm_lang$core$Native_List.fromArray(
-								[])
-						}),
+						{newHeroName: _elm_lang$core$Maybe$Nothing}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 		}
@@ -10543,29 +10387,102 @@ var _elm_lang$elm_architecture_tutorial$HeroesList_State$init = function () {
 			[]));
 }();
 
-var _elm_lang$elm_architecture_tutorial$App_State$initApp = function (route) {
-	return {
-		title: 'Tour of Heroes',
+var _elm_lang$elm_architecture_tutorial$HeroSearch_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		if (_p0.ctor === 'UpdateSearchBox') {
+			var _p1 = _p0._0;
+			return _elm_lang$core$Native_Utils.eq(_p1, '') ? A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{searchBox: _elm_lang$core$Maybe$Nothing}),
+				_elm_lang$core$Native_List.fromArray(
+					[])) : A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{
+						searchBox: _elm_lang$core$Maybe$Just(_p1)
+					}),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		} else {
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{searchBox: _elm_lang$core$Maybe$Nothing}),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$navigation$Navigation$newUrl(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'#heroes/',
+							_elm_lang$core$Basics$toString(_p0._0.id)))
+					]));
+		}
+	});
+var _elm_lang$elm_architecture_tutorial$HeroSearch_State$init = function () {
+	var model = {
 		heroesList: _elm_lang$core$Native_List.fromArray(
 			[]),
-		route: route,
-		heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init),
-		heroesListModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroesList_State$init),
-		dashboardModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$Dashboard_State$init)
+		searchBox: _elm_lang$core$Maybe$Nothing
 	};
-};
-var _elm_lang$elm_architecture_tutorial$App_State$init = function (result) {
-	var url = 'http://localhost:3000/heroes';
-	var currentRoute = _elm_lang$elm_architecture_tutorial$Routing$routeFromResult(result);
-	return {
-		ctor: '_Tuple2',
-		_0: _elm_lang$elm_architecture_tutorial$App_State$initApp(currentRoute),
-		_1: _elm_lang$navigation$Navigation$newUrl('#dashboard')
+	return A2(
+		_elm_lang$core$Platform_Cmd_ops['!'],
+		model,
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+}();
+
+var _elm_lang$elm_architecture_tutorial$Dashboard_State$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		if (_p0.ctor === 'ViewDetails') {
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{
+						heroSearchModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroSearch_State$init)
+					}),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$navigation$Navigation$newUrl(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'#heroes/',
+							_elm_lang$core$Basics$toString(_p0._0.id)))
+					]));
+		} else {
+			var _p1 = A2(_elm_lang$elm_architecture_tutorial$HeroSearch_State$update, _p0._0, model.heroSearchModel);
+			var newModel = _p1._0;
+			var newCmd = _p1._1;
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{heroSearchModel: newModel}),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(_elm_lang$core$Platform_Cmd$map, _elm_lang$elm_architecture_tutorial$Dashboard_Types$HeroSearch, newCmd)
+					]));
+		}
+	});
+var _elm_lang$elm_architecture_tutorial$Dashboard_State$init = function () {
+	var model = {
+		heroesList: _elm_lang$core$Native_List.fromArray(
+			[]),
+		heroSearchModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroSearch_State$init)
 	};
-};
-var _elm_lang$elm_architecture_tutorial$App_State$subscriptions = function (model) {
-	return _elm_lang$core$Platform_Sub$none;
-};
+	return A2(
+		_elm_lang$core$Platform_Cmd_ops['!'],
+		model,
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+}();
+
 var _elm_lang$elm_architecture_tutorial$App_State$urlUpdate = F2(
 	function (result, model) {
 		var currentRoute = _elm_lang$elm_architecture_tutorial$Routing$routeFromResult(result);
@@ -10593,10 +10510,7 @@ var _elm_lang$elm_architecture_tutorial$App_State$urlUpdate = F2(
 						{route: currentRoute}),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							A2(
-							_elm_lang$core$Platform_Cmd$map,
-							_elm_lang$elm_architecture_tutorial$App_Types$DashboardT,
-							_elm_lang$elm_architecture_tutorial$Dashboard_Rest$fetchHeroes('http://localhost:3000/heroes'))
+							_elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes('http://localhost:3000/heroes')
 						]));
 			case 'Heroes':
 				return A2(
@@ -10606,10 +10520,7 @@ var _elm_lang$elm_architecture_tutorial$App_State$urlUpdate = F2(
 						{route: currentRoute}),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							A2(
-							_elm_lang$core$Platform_Cmd$map,
-							_elm_lang$elm_architecture_tutorial$App_Types$HeroesList,
-							_elm_lang$elm_architecture_tutorial$HeroesList_Rest$fetchHeroes('http://localhost:3000/heroes'))
+							_elm_lang$elm_architecture_tutorial$App_Rest$fetchHeroes('http://localhost:3000/heroes')
 						]));
 			default:
 				return A2(
@@ -10664,6 +10575,25 @@ var _elm_lang$elm_architecture_tutorial$App_State$update = F2(
 						[
 							A2(_elm_lang$core$Platform_Cmd$map, _elm_lang$elm_architecture_tutorial$App_Types$DashboardT, newCmd)
 						]));
+			case 'FetchSucceed':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{heroesList: _p1._0}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'FetchFail':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							heroesList: _elm_lang$core$Native_List.fromArray(
+								[])
+						}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
 			case 'FetchHeroSucceed':
 				var heroDetailModel = model.heroDetailModel;
 				return A2(
@@ -10688,11 +10618,34 @@ var _elm_lang$elm_architecture_tutorial$App_State$update = F2(
 		}
 	});
 
+var _elm_lang$elm_architecture_tutorial$App$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$none;
+};
+var _elm_lang$elm_architecture_tutorial$App$initApp = function (route) {
+	return {
+		title: 'Tour of Heroes',
+		heroesList: _elm_lang$core$Native_List.fromArray(
+			[]),
+		route: route,
+		heroDetailModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroDetail_State$init),
+		heroesListModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$HeroesList_State$init),
+		dashboardModel: _elm_lang$core$Basics$fst(_elm_lang$elm_architecture_tutorial$Dashboard_State$init)
+	};
+};
+var _elm_lang$elm_architecture_tutorial$App$init = function (result) {
+	var url = 'http://localhost:3000/heroes';
+	var currentRoute = _elm_lang$elm_architecture_tutorial$Routing$routeFromResult(result);
+	return {
+		ctor: '_Tuple2',
+		_0: _elm_lang$elm_architecture_tutorial$App$initApp(currentRoute),
+		_1: _elm_lang$navigation$Navigation$newUrl('#dashboard')
+	};
+};
 var _elm_lang$elm_architecture_tutorial$App$main = {
 	main: A2(
 		_elm_lang$navigation$Navigation$program,
 		_elm_lang$elm_architecture_tutorial$Routing$parser,
-		{init: _elm_lang$elm_architecture_tutorial$App_State$init, view: _elm_lang$elm_architecture_tutorial$App_View$root, update: _elm_lang$elm_architecture_tutorial$App_State$update, subscriptions: _elm_lang$elm_architecture_tutorial$App_State$subscriptions, urlUpdate: _elm_lang$elm_architecture_tutorial$App_State$urlUpdate})
+		{init: _elm_lang$elm_architecture_tutorial$App$init, view: _elm_lang$elm_architecture_tutorial$App_View$root, update: _elm_lang$elm_architecture_tutorial$App_State$update, subscriptions: _elm_lang$elm_architecture_tutorial$App$subscriptions, urlUpdate: _elm_lang$elm_architecture_tutorial$App_State$urlUpdate})
 };
 
 var Elm = {};

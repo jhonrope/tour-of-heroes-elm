@@ -1,6 +1,14 @@
 {
   "heroes": [
     {
+      "id": 11,
+      "name": "Mr. Nice"
+    },
+    {
+      "id": 12,
+      "name": "Narco"
+    },
+    {
       "id": 13,
       "name": "Bombasto"
     },
@@ -10,7 +18,7 @@
     },
     {
       "id": 15,
-      "name": "Piromatics"
+      "name": "Magneta"
     },
     {
       "id": 16,
@@ -18,7 +26,11 @@
     },
     {
       "id": 17,
-      "name": "Dynama6"
+      "name": "Dynama"
+    },
+    {
+      "id": 18,
+      "name": "Dr IQ"
     },
     {
       "id": 19,

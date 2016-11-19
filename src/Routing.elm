@@ -4,20 +4,14 @@ import String
 import Navigation
 import UrlParser exposing (..)
 import Debug exposing (log)
-
-
-type Route
-    = Dashboard
-    | Heroes
-    | HeroDetail Int
-    | NotFoundRoute
+import App.Types exposing (..)
 
 
 matchers : Parser (Route -> a) a
 matchers =
     oneOf
         [ format Dashboard (s "")
-        , format HeroDetail (s "heroes" </> int)
+        , format HeroDetails (s "heroes" </> int)
         , format Heroes (s "heroes")
         , format Dashboard (s "dashboard")
         ]
