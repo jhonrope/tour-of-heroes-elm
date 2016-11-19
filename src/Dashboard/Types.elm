@@ -1,8 +1,8 @@
 module Dashboard.Types exposing (..)
 
+import Http exposing (Error)
 import Hero.Types exposing (..)
 import HeroSearch.Types exposing (..)
-import Http exposing (Error)
 
 
 type alias Model =

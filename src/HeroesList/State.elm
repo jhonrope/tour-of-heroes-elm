@@ -1,11 +1,11 @@
 module HeroesList.State exposing (..)
 
-import HeroesList.Types exposing (..)
 import Navigation exposing (..)
-import HeroDetail.State exposing (..)
 import App.Rest exposing (..)
 import Hero.Types exposing (..)
+import HeroDetail.State exposing (init, update)
 import HeroesList.Rest exposing (..)
+import HeroesList.Types exposing (..)
 
 
 init : ( Model, Cmd Msg )

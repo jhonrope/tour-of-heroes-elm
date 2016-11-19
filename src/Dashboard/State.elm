@@ -1,9 +1,9 @@
 module Dashboard.State exposing (..)
 
-import Dashboard.Types exposing (..)
 import Navigation exposing (..)
-import HeroDetail.State exposing (..)
-import HeroSearch.State exposing (..)
+import Dashboard.Types exposing (..)
+import HeroDetail.State exposing (init, update)
+import HeroSearch.State exposing (init, update)
 
 
 init : ( Model, Cmd Msg )

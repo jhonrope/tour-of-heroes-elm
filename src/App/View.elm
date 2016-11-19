@@ -1,16 +1,16 @@
 module App.View exposing (..)
 
 import Html exposing (Html, div, h1, h2, h3, h4, text, nav, a, label, input, button, ul, li, span, Attribute)
-import Html.App exposing (..)
+import Html.App exposing (map)
 import Html.Attributes exposing (href, class, value, type', id)
 import Html.Events exposing (onInput, onClick, Options, onWithOptions)
 import Json.Decode as Json
 import String exposing (toUpper)
 import App.Types exposing (..)
+import Dashboard.View exposing (root)
 import Hero.Types exposing (..)
 import HeroDetail.View exposing (root)
-import HeroesList.View exposing (..)
-import Dashboard.View exposing (..)
+import HeroesList.View exposing (root)
 
 
 root : AppModel -> Html Msg

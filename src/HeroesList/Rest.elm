@@ -1,10 +1,10 @@
 module HeroesList.Rest exposing (..)
 
 import Http exposing (get)
-import HeroesList.Types exposing (..)
-import Hero.Types exposing (..)
 import Task exposing (..)
 import App.Rest exposing (..)
+import Hero.Types exposing (..)
+import HeroesList.Types exposing (..)
 
 
 saveHero : Hero -> String -> Cmd Msg

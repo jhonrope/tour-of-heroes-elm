@@ -1,10 +1,9 @@
 module App exposing (..)
 
-import Navigation exposing (..)
-import App.View exposing (..)
-import App.State exposing (..)
-import App.Types exposing (..)
-import Routing exposing (..)
+import Navigation exposing (program)
+import App.View exposing (root)
+import App.State exposing (update, init, subscriptions, urlUpdate)
+import Routing exposing (parser)
 
 
 main : Program Never

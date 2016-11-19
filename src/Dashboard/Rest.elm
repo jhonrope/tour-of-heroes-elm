@@ -1,8 +1,8 @@
 module Dashboard.Rest exposing (..)
 
-import Http exposing (..)
+import Http exposing (get)
 import Task exposing (perform)
-import App.Rest exposing (..)
+import App.Rest exposing (decodeListHero)
 import Dashboard.Types exposing (..)
 
 

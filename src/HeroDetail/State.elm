@@ -1,8 +1,8 @@
 module HeroDetail.State exposing (..)
 
 import Navigation exposing (back)
-import HeroDetail.Types exposing (..)
 import HeroDetail.Rest exposing (updateHero)
+import HeroDetail.Types exposing (..)
 
 
 init : ( Model, Cmd Msg )

@@ -3,8 +3,8 @@ module HeroDetail.View exposing (root)
 import Html exposing (Html, div, h2, text, label, input, button)
 import Html.Attributes exposing (type', value, placeholder)
 import Html.Events exposing (onClick, onInput)
-import HeroDetail.Types exposing (..)
 import Hero.Types exposing (..)
+import HeroDetail.Types exposing (..)
 
 
 root : Maybe Hero -> Html Msg

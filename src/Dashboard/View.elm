@@ -1,12 +1,12 @@
 module Dashboard.View exposing (..)
 
 import Html exposing (Html, div, h3, h4, text)
-import Html.App exposing (..)
+import Html.App exposing (map)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import HeroSearch.View as HeroSearch exposing (..)
-import Hero.Types exposing (..)
 import Dashboard.Types exposing (..)
+import Hero.Types exposing (..)
+import HeroSearch.View as HeroSearch exposing (root)
 
 
 root : Model -> Html Msg

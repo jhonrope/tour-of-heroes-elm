@@ -1,8 +1,8 @@
 module HeroSearch.State exposing (..)
 
-import HeroSearch.Types exposing (..)
-import Navigation exposing (..)
+import Navigation exposing (newUrl)
 import Hero.Types exposing (..)
+import HeroSearch.Types exposing (..)
 
 
 init : List Hero -> ( Model, Cmd Msg )

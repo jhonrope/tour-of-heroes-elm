@@ -1,31 +1,11 @@
 module App.Rest exposing (..)
 
-import App.Types exposing (..)
-import Task exposing (..)
+import Http exposing (..)
+import Task exposing (perform)
 import Json.Decode as Json
 import Json.Encode
-import Http exposing (..)
 import Hero.Types exposing (..)
-
-
-heroes : List Hero
-heroes =
-    [ Hero 1 "Mr. Nice"
-    , Hero 2 "Narco"
-    , Hero 3 "Bombasto"
-    , Hero 4 "Celeritas"
-    , Hero 5 "Magneta"
-    , Hero 6 "RubberMan"
-    , Hero 7 "Dynama"
-    , Hero 8 "Dr IQ"
-    , Hero 9 "Magma"
-    , Hero 10 "Tornado"
-    ]
-
-
-getHeroes : List Hero
-getHeroes =
-    heroes
+import App.Types exposing (..)
 
 
 fetchHero : String -> Cmd Msg

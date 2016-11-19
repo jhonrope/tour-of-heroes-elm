@@ -1,14 +1,14 @@
 module App.State exposing (..)
 
-import App.Types exposing (..)
-import HeroDetail.State exposing (..)
 import Navigation exposing (..)
-import App.Rest exposing (..)
 import Routing exposing (..)
-import HeroesList.State exposing (..)
-import Dashboard.State exposing (..)
-import Dashboard.Rest as DRest exposing (..)
-import HeroesList.Rest as HLRest exposing (..)
+import App.Rest exposing (..)
+import App.Types exposing (..)
+import Dashboard.Rest as DRest exposing (fetchHeroes)
+import Dashboard.State exposing (update, init)
+import HeroDetail.State exposing (update, init)
+import HeroesList.Rest as HLRest exposing (fetchHeroes)
+import HeroesList.State exposing (update, init)
 
 
 update : Msg -> AppModel -> ( AppModel, Cmd Msg )
@@ -54,7 +54,7 @@ urlUpdate result model =
     in
         case currentRoute of
             HeroDetails id ->
-                { model | route = currentRoute } ! [ fetchHero ("http://localhost:3000/heroes/" ++ (toString id)) ]
+                { model | route = currentRoute } ! [ fetchHero ("http://localhost:3000/heroes/" ++ toString id) ]
 
             Dashboard ->
                 { model | route = currentRoute } ! [ Cmd.map DashboardT (DRest.fetchHeroes "http://localhost:3000/heroes") ]

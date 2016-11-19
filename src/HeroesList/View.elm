@@ -3,9 +3,9 @@ module HeroesList.View exposing (root)
 import Html exposing (Html, div, h2, label, text, input, button, ul, li, span, Attribute)
 import Html.Attributes exposing (type', value, class)
 import Html.Events exposing (onInput, onClick, Options, onWithOptions)
+import Json.Decode as Json
 import String exposing (toUpper)
 import Hero.Types exposing (..)
-import Json.Decode as Json
 import HeroesList.Types exposing (..)
 
 

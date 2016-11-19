@@ -1,6 +1,5 @@
 module HeroesList.Types exposing (..)
 
-import Hero.Types exposing (..)
 import Http exposing (Error)
 import Hero.Types exposing (..)
 
