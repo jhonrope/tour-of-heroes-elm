@@ -40,7 +40,7 @@ miniDetail maybeHero =
 
 showHero : Hero -> Hero -> Html Msg
 showHero hero2 hero =
-    div []
+    div [ onClick <| SelectHero hero ]
         [ span [ class "badge" ] [ text (toString hero.id) ]
         , span [] [ text (" " ++ hero.name) ]
         , button [ class "delete", otherClick <| DeleteHero hero ] [ text "x" ]
